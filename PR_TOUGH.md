@@ -1,0 +1,1030 @@
+# PR_TOUGH.md
+
+A tough architectural PR review framework. Use this prompt when you need a code review that enforces your **documented** architecture, not just local code correctness.
+
+This framework reviews against the architecture in your repo's `AGENTS.md` / `CLAUDE.md`. It does **not** review against generic best practices. If your repo does not have a documented architecture, this framework will not be useful.
+
+Synthesized from production review prompts across PowerShell orchestration (EngineerForge / Fork), ASP.NET + MongoDB services (Stratus), WPF desktop apps (Workstation, Monitor, Tooling), C++ experiments (WinTCar), embedded Linux integrations (reMarkable), and static web (AIManifesto). The universal core applies to every codebase; platform-specific addenda live at the bottom and apply only when the diff touches that domain.
+
+---
+
+## 0. Core Rule
+
+Read `AGENTS.md` and `CLAUDE.md` first. Use them, the current test seams, the current file headers, and the code as it exists on disk as **law**.
+
+Do not depend on outdated planning docs or deleted design files. Do not trust comments, release notes, refactor claims, or file moves by themselves -- verify the architecture in code, tests, manifests, and docs.
+
+Then read the diff.
+
+Review source, tests, manifests, and docs -- not just the code diff. A diff that looks clean in isolation can still introduce architectural drift through test fixtures, build manifests, or comments that lie about what the code does.
+
+---
+
+## 1. Hard Gates (Auto-Floor the Grade)
+
+These conditions force a grade floor regardless of any other strengths in the diff.
+
+| Gate | Floor | Rule |
+|---|---|---|
+| **Build fails** | `D-` | If `dotnet build`, `cmake --build`, `cargo build`, or the project's documented build command fails on a file in the diff's blast radius, the floor is D-. Do not dismiss build failures as environmental, machine-specific, or unrelated. |
+| **Lint fails on changed files** | One severity bump | If the project has lint rules and any changed file fails them, every finding is at least one severity higher. The pre-commit hook will block it anyway. |
+| **Hidden mutation in read paths** | `F` | If a refresh, render, projection, polling, hydration, liveness, or status path silently writes to canonical state, that is an F. |
+| **Single-click destructive action** | `F` | Any destructive button (delete-all, nuke, reset, force-push) that fires on a single click without operator confirmation is an F. |
+| **Invented command / API the system does not have** | `F` | A sidecar, monitor, or operator surface that submits commands the engine/server does not recognize is an F. |
+| **Forward-compat lie** | `F` | Docs, comments, or commit messages claim a cleanup or refactor is finished while the old path still ships in runtime. |
+
+---
+
+## 2. Preflight Before Writing Findings
+
+### 2.0. Validation and review scope.
+
+Run applicable documented validation before writing findings. Use the repository's standard build, test, formatter/lint, and status checks when they fit the touched surface. If a command is unavailable or irrelevant, say why in the review instead of treating the substitution as a defect.
+
+Build failures in the touched surface are blocking. Test failures on existing tests in the touched surface are blocking. Lint or formatter failures in the touched surface are blocking when the repository treats that lint or formatter as a gate. Review source, tests, manifests, docs, and the full `git status --short` output. Inspect untracked or unrelated files when they are part of the task, referenced by tracked files, affect build/test behavior, or may change the reviewed contract. Reviewers judge the full tree without getting stuck on staging mechanics, but this does not override the project canonical batch-hygiene gates: unrelated dirty-tree contamination, untracked required artifacts, or contradictory process records are review findings. Do not recommend destructive cleanup such as reset, checkout, or discard; report the inconsistency for the executor or human to resolve under the canonical repo rules. Executor claims are leads, not proof; verify against files, tests, and contracts.
+
+### 2.1. Targeted drift search.
+
+Before writing any findings, grep for the drift patterns specific to your repo. Examples (replace with patterns from your AGENTS.md):
+
+- **Bypassed helpers** -- hand-rolled versions of existing helpers, direct `Get-Content | ConvertFrom-Json` outside persistence helpers, direct `Set-Content` / `Out-File` on canonical data.
+- **Cross-namespace coupling** -- imports that violate documented boundaries, session-layer files importing UI helpers, UI files importing service internals.
+- **Canonical authority violations** -- multiple sources of truth for the same entity, dual-field emission ("sessionId" alongside "nativeSessionId"), fallback chains.
+- **Cache / projection treated as authoritative** -- cache lookups in business logic, mutation decisions based on projection data.
+- **Mutable presentation state used as identity** -- display names as keys, WT profile names as session lookup, file paths as identity evidence.
+- **Old patterns preserved under new names** -- comments claiming cleanup that the code doesn't actually do, "transitional" code without a retirement condition.
+- **Hardcoded vendor source inside dispatched platform work** -- `$platform = 'claude'`, `source = 'codex'` when the dispatcher already knows.
+- **Magic numeric flag parsers** -- `.Substring(19)` style command-line parsing.
+
+### 2.2. Trace the full path before judging the surface.
+
+For any UI / API / export change, manually trace end-to-end:
+
+1. UI control → emitted event → handler.
+2. Handler → HTTP request shape (verb, route, params, content-type).
+3. Server entry (controller / endpoint) → service call → response.
+4. Service call → repository / store → external system.
+5. Data source for the response → field origin → unit conventions → fallbacks.
+6. Tests → what is covered vs. what is not.
+
+A change that looks right at one layer often breaks at the seam between two layers.
+
+### 2.3. Distinguish "incomplete by design" from "broken now."
+
+When the plan or design doc says a slice is intentionally unfinished, do not report the absence as a bug. Do report cases where the current code *pretends* the unfinished slice is complete -- bad fallback values, silent successes that should be diagnosable failures, false UI states.
+
+---
+
+## 3. Universal Defect Categories (in priority order)
+
+### 3.1. Canonical Truth Violations (Critical)
+
+Your architecture documents a single source of truth for each entity.
+
+- Does any code path treat a non-canonical file or store as authority?
+- Does any code path write durable state in multiple places without one being clearly canonical?
+- Does any code path persist fields that should not be canonical -- computed/derived values, presentation state, transient runtime markers?
+- Does any code path use mutable presentation fields (display names, file paths, UI state, WT profile names) as identity evidence?
+- Does any code reintroduce legacy aliasing (`sessionId` instead of `nativeSessionId`, `state` instead of explicit tombstones)?
+- Does any action path read raw identity fields directly instead of going through the documented accessor / recovery seam?
+- Does any `Get-*` function mutate state? Does any `Resolve-*` function delete? Does any `Test-*` function clean up?
+
+### 3.2. Boundary and Namespace Violations (Critical)
+
+Your architecture documents how modules relate and which ones may call which others.
+
+- Does any code cross documented boundaries (UI doing business logic, core doing rendering, session layer prompting the user)?
+- Does any new code bypass a documented helper by hand-rolling the logic inline?
+- Does any code depend on implementation details of another module instead of using its public interface?
+- Does any change quietly preserve old coupling under new names or "transitional" comments?
+- Does any change move code into smaller files but keep the same wrong ownership split?
+
+### 3.3. Cache and Projection Violations (High)
+
+If you document a cache or derived projection, the architecture assumes it can be rebuilt from canonical truth.
+
+- Does any code path treat cache / projection as source of truth when it should be read-only?
+- Does any write path update cache but fail to update the canonical record first?
+- Does any read path silently trust derived data when canonical data is missing or contradictory?
+- Does any repair path reconcile derived data against canonical instead of rebuilding derived from canonical?
+- If a projection is deleted right now, would rebuilding from canonical restore the same visible state? If not, the projection has become quiet authority.
+- Does any new feature store declare its lifecycle: durable evidence, rebuildable projection, disposable cache, or transient transport?
+
+### 3.4. Authorization and Access Violations (High)
+
+If your architecture documents who can mutate what, and when.
+
+- Does any code mutate state at the wrong layer?
+- Does any code skip required authorization checks or guards?
+- Does any new code assume a prerequisite is true without validating it first?
+- Does any destructive operation lack a confirmation guard?
+- Was an action parameter removed as "unused" when it was required by an authorization attribute (e.g., `[FeatureClaim]`, role decorator)?
+- If authorization context comes from request body data instead of the route, is there an explicit ownership check that backs it up?
+
+### 3.5. Helper, Pattern, and Abstraction Drift (High)
+
+The plan only works if documented boundaries stay intact.
+
+- Does any new function duplicate an existing helper, mapper, builder, validator, or converter?
+- Does any new code hand-roll behavior that an existing seam already owns?
+- Does any change hide side effects behind misleading naming or placement?
+- Does any new abstraction have a clear owner, caller, and reason -- or is it speculative flexibility?
+- Does any new DTO / view model carry the same concept under a different shape without a clear contract reason?
+- Are sibling routes / list types copying logic instead of delegating to a shared discriminator/mode helper?
+- Does any new DI-owned service get registered in the established composition root, with a service lifetime compatible with its dependencies?
+
+### 3.6. Build, Manifest, and Product-Parity Drift (High)
+
+If your product is stitched from multiple sources or built from manifests.
+
+- Was a new shared file added but not included in every required manifest?
+- Was logic moved in source but left duplicated or stale in build artifacts?
+- Can the same helper now behave differently across products because manifests load different files or different order?
+- Do docs claim "single source" while build artifacts still preserve multiple copies?
+- Are new source files (samples, fixtures, resources) referenced but not copied to test output?
+- Does the diff change a project file's include pattern in a way that silently adds or drops files?
+
+### 3.7. Safety, Repair, and Destructive Operations (Medium-Critical)
+
+Maintenance code must be more careful than normal code. Severity escalates to Critical when data loss is plausible.
+
+- Does any repair or cleanup path make assumptions about data consistency?
+- Does any destructive operation lack proper guards where data loss is possible?
+- Does any code delete or overwrite artifacts when ownership is uncertain?
+- Does cleanup code silently heal ambiguity by deletion instead of surfacing the problem?
+- Does any code mutate in-memory state to "success" before the durable evidence/projection write succeeds?
+- If persistence fails after external work succeeds, does the code surface a failed/partial state honestly, or is memory and disk silently divergent?
+- Does any escape hatch for direct-file repair exist in a path the normal UI/operator can reach?
+
+### 3.8. Null Paths, Silent Fallbacks, and Misleading Successes (High-Medium)
+
+Silent wrong answers are worse than loud failures.
+
+- Are nullable / optional values dereferenced without a guard?
+- Do geometry helpers run on zero-length vectors without a guard?
+- Do `.First()` / `[0]` / `.head` calls run on potentially empty collections?
+- Does any fallback value produce silently wrong results instead of an error?
+- Does any `continue` / `skip` silently drop user-supplied data without surfacing a warning?
+- Does any `.Where()` filter silently exclude items the user expects to see?
+
+### 3.9. Test, Fixture, and Guardrail Drift (Medium)
+
+Tests are architecture documentation. False tests hide real drift.
+
+- Is there a new architectural seam without a contract test proving the invariant holds?
+- Do tests or fixtures still encode the old architecture instead of the new one?
+- Do tests still guard the right boundaries, or did refactoring quietly bypass a guard without replacing it?
+- Is there a new code path that should be proven correct by a test but isn't?
+- Are tests rewritten to rubber-stamp the new code instead of asserting the original contract?
+- Do tests reject the **forbidden shape** that caused the bug, not only the new happy path?
+- Do tests only cover the single-item happy path, missing multi-item, null, and error scenarios?
+- Are tests reaching private methods by reflection instead of going through the public / `internal`+`InternalsVisibleTo` seam?
+- Did the diff add one giant boolean megatest that could hide architecture drift, instead of splitting by contract?
+- Do tests follow the same helper-first persistence rules as production code, or do they normalize direct file I/O on canonical data?
+- Do registry-driven shared tests enumerate registered platforms / capabilities, or do they fossilize a fixed list that goes stale silently?
+
+### 3.10. Documentation, Comment, and Truthfulness Drift (Medium)
+
+Docs and comments are part of the architecture contract.
+
+- Do code comments or file headers claim cleanup is finished when code still violates the documented boundary?
+- Do comments call something "transitional," "compat," "fallback," or "temporary" without a concrete retirement path or timeline?
+- Do file headers misdescribe ownership or responsibility after refactoring?
+- Does this diff match what the plan, design doc, or commit message claimed?
+- Are async functions still named with `Async` after they stopped doing asynchronous work?
+- Are new public / internal / non-trivial private functions missing comments where assumptions, units, or limits are not obvious?
+
+**Use `.md` files freely as evidence — read plans, changelogs, and design docs to verify whether code changes match their stated intent. But never produce a finding that asks to fix a `.md` file.** A code review is about source code, tests, manifests, and inline doc-strings -- not standalone documentation. The single exception is when the diff itself edited docs incorrectly.
+
+---
+
+## 4. Review Posture
+
+When reviewing, be architecture-aware and phase-aware:
+
+- **Block changes that preserve old patterns under new names.**
+- **Block changes that move code into smaller files but keep the same wrong ownership split.**
+- **Be suspicious of "compatibility," "transitional," "fallback," and "repair" code** -- that is where old assumptions usually survive.
+- **Verify behavior in code, not in claims.** Comments that say "this is now read-only" while the function calls `File.Move` are a critical finding.
+- **A passing test is evidence, not proof.** Tests can rubber-stamp wrong behavior. Tests can encode the old architecture. A passing build is a precondition for grading above the floor, not a credit toward a higher grade.
+
+---
+
+## 5. Output Format
+
+### Findings
+
+Order by severity. For each finding include:
+
+```
+Severity: CRITICAL | HIGH | MEDIUM | LOW
+Category: <one of the 10 categories>
+File:Line: <exact location>
+What: <one-line description>
+Why it matters: <concrete current risk or operator/architecture impact>
+Failure mode: <how it breaks or how to reproduce>
+Fix: <smallest credible fix, not a refactor wish list>
+```
+
+If you are unsure, say so explicitly and explain what evidence would confirm it. Do not pad findings with speculative future risk.
+
+If there are no findings, say exactly: `No findings.`
+
+### Architectural Drift Score
+
+Combine the standard letter scale with a percentage so the grade carries information:
+
+| Grade | Percentage | Meaning | Verdict |
+|---|---|---|---|
+| **A+** / **A** / **A-** | 90-100% | Excellent. Boundaries intact, no drift, actively strengthens the architecture. | APPROVED |
+| **B+** / **B** / **B-** | 80-89% | Good. Minor issues, follow-up-quality gaps, or missing manual UI validation. No boundary violations. | APPROVED with follow-up |
+| **C+** / **C** / **C-** | 70-79% | Acceptable but fixable. Some drift or risky behavior; boundary violations are minor or pre-existing. | Merge only with explicit follow-up ticket, or rework |
+| **D** | 60-69% | Poor. Significant drift, multiple boundary violations, or missing tests on critical paths. | REWORK |
+| **D-** | -- | Build fails. Automatic floor. | BLOCK until build is green |
+| **F** | 0-59% | Failing. Severe drift, reintroduced legacy assumptions, hidden mutation, destructive-action drift, render-loop blocking, invented engine commands, false liveness/time reporting, or critical safety issues. | BLOCK |
+
+**Grading guidance:**
+- Category 1-2 violations (canonical / boundary): deduct 25-40 points each.
+- Category 3-5 violations (cache / authorization / helper drift): deduct 10-20 points each.
+- Category 6-7 violations (build / safety): deduct 5-15 points each.
+- Category 8-10 issues (silent fallbacks / tests / docs): deduct 2-10 points each.
+- Manifest divergence: deduct 5-10 points.
+
+### Missing Validation
+
+List exact commands or manual checks that still need to run. Be specific:
+
+- "Run `dotnet test Gtpx.Cloud.Services.Tests.Unit/Gtpx.Cloud.Services.Tests.Unit.csproj --filter CutListServiceTests` to prove the new multi-item case."
+- "Visually verify the engine circle in the three states: alive, between-steps, dead. Confirm hover tooltips fire on every button."
+- "Inspect the produced MSI metadata to confirm the version matches the manifest input."
+
+### Missing Tests
+
+For each, specify the correct test file (e.g., `tests/unit/...`, `tests/contracts/...`, `src/testing/orchestration/engine.ps1`) and the invariant the test should prove. Place each test in the layer that owns the seam being tested.
+
+### Residual Risks
+
+Only real risks that remain current after the review. Do not list vague future work.
+
+### Summary
+
+Keep it short. If clean, say so and list residual risks. If not clean, state whether to block, rework, or merge with explicit follow-up. Call out explicitly when docs/tests are lying about the architecture even if the runtime bug hasn't happened yet.
+
+---
+
+## 6. Short Prompt
+
+```text
+Tough architectural PR review on the current working tree. Read
+AGENTS.md/CLAUDE.md first; do not depend on deleted docs. Use documented
+architecture, current tests, file headers, and code as law.
+
+Review source, tests, manifests, and docs -- not just the code diff.
+
+Hunt for, in priority order:
+(1) canonical-truth violations
+(2) boundary/namespace violations
+(3) cache/projection treated as authoritative
+(4) authorization/access violations
+(5) helper/pattern/abstraction drift
+(6) build/manifest parity drift
+(7) safety/repair issues, especially silent deletion under ambiguity
+(8) null paths and silent fallbacks
+(9) test/fixture drift that encodes wrong architecture
+(10) comment/doc truthfulness drift
+
+Auto-floor grade to D- if build fails. Auto-floor to F for hidden
+mutation in read paths, single-click destructive actions, invented
+commands, or false claims of completed cleanup. Never produce findings
+that ask to fix standalone .md files -- use them as evidence only.
+
+Findings first by severity with exact file:line, failure mode, and
+smallest credible fix. Then grade A+ through F with percentage.
+List missing validation, missing tests, residual risks, and a short
+summary.
+```
+
+---
+
+## 7. How To Invoke
+
+In your session with Claude:
+
+**General review:**
+> "Do a tough PR review using PR_TOUGH.md as your constraint. Review the current state of [file/feature/directory]. Put the output in PR_ANALYSIS.md (overwriting if it exists)."
+
+**Scoped review:**
+> "Using PR_TOUGH.md and my documented architecture in AGENTS.md, review these files for architectural drift: [list files]. Output to PR_ANALYSIS.md with findings ordered by severity."
+
+**Paired with a plan execution:**
+> "You just executed the my-feature.md plan. Now do a tough review of the result using PR_TOUGH.md as your constraint. Output the findings to PR_TOUGH_FINDINGS.md. If you find CRITICAL issues, surface them immediately."
+
+**On a slice that has known incomplete-by-design parts:**
+> "Tough PR review of the [slice]. Use PR_TOUGH.md. The following are intentionally unfinished and must NOT be reported as bugs unless the code falsely pretends they are complete: [list]. Stay on the slice; do not review unrelated repo churn."
+
+---
+
+## 8. When To Use This
+
+- Before any commit that touches core architectural seams or boundaries.
+- Before any commit that changes how canonical data is stored or retrieved.
+- Before any commit that modifies tests, build manifests, or documentation.
+- Before any commit that claims to complete architectural cleanup, debt closure, or refactoring.
+- After AI-generated code lands, especially if it touches storage, builds, tests, or manifests.
+- When a diff is large enough to risk reviving old architectural assumptions under new names.
+- When comments or release notes claim architectural purity that the code doesn't demonstrate.
+
+---
+
+---
+
+# Platform-Specific Addenda
+
+The universal core above applies to every codebase. The sections below apply only when the diff touches the named platform, language, or domain. Read the addendum for every domain the change touches.
+
+---
+
+## A. WPF / .NET Desktop (overlay tools and MVVM apps)
+
+Applies to: WPF overlays (`monitor.cs`), WPF MVVM apps (Workstation, Print, Tooling), any WPF surface that mutates settings or talks to hardware.
+
+### A.1. Unexpected state mutation (Critical)
+
+Normal refresh, render, hydration, liveness checks, and stuck detection must be **read-only**. The only allowed writes are explicit button actions: command receipt submission, supervisor process launch, and explicit destructive flows. Flag any hidden mutation in polling, drawing, parsing, sorting, or status calculation.
+
+Specifically forbidden in normal refresh:
+- Direct write to canonical state files (e.g., `workflow.json`, `session.json`).
+- Deletion of command-ingress files (`commands/incoming/*.json`).
+- Any `File.Move` / `File.Delete` on engine state.
+- Mutation of `locks/`, `runs/`, or evidence directories.
+
+### A.2. Dangerous control drift (Critical)
+
+Every operator button must have a clear, single-purpose effect. Destructive buttons must require operator confirmation before firing -- either a two-step inline flow that flips the button row to a confirmation state, or a modal `MessageBox.Show` with `MessageBoxButton.YesNo`. A single-click destructive button is an automatic `F`.
+
+No destructive operation may run automatically or from weak liveness evidence. Hard stops must run only from explicit button clicks, never from polling, refresh, or hover.
+
+### A.3. Engine / API command parity (Critical)
+
+If the WPF app is a sidecar (Monitor → orchestration engine, Workstation → cloud backend), every command it submits must use a command name the engine actually has. Grep the engine's command surface (e.g., `Get-SFWorkflowCommandProjection` in `src/integration/orchestration-engine.ps1`) to confirm. Inventing command names the system doesn't recognize is `F`.
+
+### A.4. Visual contract drift (High)
+
+If the app has a load-bearing visual indicator (status circle, badge, color-coded state), its color / dash / label states are a contract.
+
+Example -- the EngineerForge monitor's engine circle has eight states:
+
+| State | Color | Dash | Label | Meaning |
+|---|---|---|---|---|
+| Alive | green solid | no | `engine` | Worker running, fresh lock, or recent progress |
+| Worker running | green solid + inner rotating dash | yes, inner only | `engine` | Worker process is actively running |
+| Run flash | white solid | optional | `engine~` | Operator pressed a button; awaiting heartbeat |
+| Between steps | yellow solid | no | `engine~` | Active workflow, no worker, no fresh lock yet |
+| Result stuck | yellow dashed | yes | `engine!` | Worker result exists, supervisor not advanced |
+| Success / done | bright green solid | no | `engine ok` | `completed` or `archived` -- **not a problem** |
+| Cancelled | gray solid | no | `engine -` | Operator stopped the run -- **not a problem** |
+| Dead / failed | red dashed | yes | `engine?` | `failed` / `stalled` / `paused` / `intervention-required` / supervisor confirmed dead |
+
+Do not introduce new colors or dash states without updating the contract doc. Hovering the indicator must show a tooltip with the current state and recommended remedy. Success / cancelled states must **not** use red -- those are not problems.
+
+### A.5. Time truthfulness (High)
+
+- Display absolute times in local machine time via `value.ToLocalTime()`.
+- Treat offset-less store timestamps as UTC via `.ToUniversalTime()` parsing.
+- Format relative ages as lowercase, spaced text: `45s ago`, `8m ago`, `2h 25m ago`, `2d 3h ago`.
+- Future timestamps must render as `in <duration>`, never clamped to `0s ago`.
+- Use `DateTimeOffset.UtcNow` for all "now" values; never `DateTime.Now`.
+
+### A.6. Render-loop and async safety (Critical when violated, High by default)
+
+Every external process call (`powershell.exe`, `dotnet`, `git`, hardware I/O) must run in `_ = System.Threading.Tasks.Task.Run(() => { ... })`. Inline blocking calls freeze the WPF render loop for the duration of the timeout (typically 15s). Bound external processes with timeouts.
+
+`async void` methods must have a top-level try/catch that routes to a documented error sink -- uncaught exceptions in `async void` terminate the process.
+
+Empty catches (`catch { }`, `catch (Exception) { }`) are findings.
+
+### A.7. UI fidelity and layout (High)
+
+For overlay-style apps:
+- Floating overlay text on a black background; no dialog or card layout for the main output.
+- Controls centered under the **measured** text block, not under the terminal or screen.
+- Close button on the top-most output row, near the right edge.
+- Vector glyph rendering stays. Do not replace with WPF `TextBlock` without explicit user approval.
+- Hover tooltips on every button and indicator are required.
+
+### A.8. Store parsing and partial-write resilience (Medium)
+
+The app reads live files while another process writes them. JSON reads must use shared access (`FileShare.ReadWrite | FileShare.Delete`). Missing files, malformed JSON, empty strings, and live log tails must not crash the overlay.
+
+Command-receipt writes must be atomic: write to `path.tmp`, then `File.Move(tempPath, path)`. UTF-8 without BOM (`new UTF8Encoding(encoderShouldEmitUTF8Identifier: false)`).
+
+### A.9. Settings persistence (High)
+
+Never delete-then-write canonical settings:
+
+```csharp
+// WRONG: data loss if crash between the two
+File.Delete(path);
+File.WriteAllText(path, json);
+
+// CORRECT: temp file, then atomic replace
+var tmp = path + ".tmp";
+File.WriteAllText(tmp, json);
+File.Replace(tmp, path, path + ".bak");
+```
+
+Never cache `Settings` as a static field snapshot:
+```csharp
+// WRONG: stale forever
+private static Settings _settings = _app.Settings;
+
+// CORRECT: live read
+private static Settings Settings => ((App)Application.Current).Settings;
+```
+
+### A.10. MVVM layer discipline (High)
+
+- Views: layout, event wiring, visual state only. No business logic. No direct settings writes.
+- ViewModels: expose bindable properties and commands. Raise `PropertyChanged` for every changed bindable property.
+- Commands: implement `ICommand`, delegate to services.
+- Services: own external I/O. Slow work in `Task.Run`.
+- `ObservableCollection` mutations on the UI thread only (`_dispatcher.Invoke(...)` or `BindingOperations.EnableCollectionSynchronization`).
+
+### A.11. Single-file build discipline (Medium)
+
+If the project is intentionally `dotnet run monitor.cs` (script mode), do not add dependencies, project files, or source splits without a clear reason and updated docs. The `#:property` directives at the top of `monitor.cs` are the documented build configuration.
+
+### A.12. Cross-repo test contract (Low)
+
+Some main-repo contract tests grep the sidecar source for specific function bodies (e.g., `QueueTerminalCurrentStepRestart`, `ClearIncomingWorkflowCommands`). Renaming these without a matching update in the main-repo test breaks the contract test until both sides land together. Flag this when the diff renames a function that contract tests pin by name.
+
+---
+
+## B. WiX / MSI Installer & Release Pipeline
+
+Applies to: WorkstationMsi, PrintMsi, Auto-Updates/AutoUpdateMsi, any WiX 3.1.x installer, GitHub Actions release workflows.
+
+### B.1. Version drift across artifacts (Critical)
+
+Version must flow consistently through EXE, MSI, WinGet manifest, GitHub tag, release branch, and any auto-update channel. Inspect the produced EXE / MSI metadata; do not trust build success alone. Hardcoded release versions in app or installer files are findings unless the user explicitly asked for a temporary emergency override.
+
+### B.2. Signing and timestamping (Critical)
+
+Self-contained publish, WiX harvest filters, signing, and timestamping must be checked together. Silent skipping of signing on any intended artifact is a Critical finding.
+
+### B.3. Installer payload completeness (High)
+
+App resource files referenced but not included in the installer payload. Shared DLLs missing from the harvest. New samples / fixtures / images bundled in source but not flowing to the output.
+
+### B.4. Pipeline input ownership (High)
+
+Reusable workflow inputs should be resolved by the caller. Caller workflows own manual or generated version selection; shared workflows consume one already-resolved value. If a workflow is called by a scheduler or another workflow, the diff must update the caller inputs too -- not only the shared workflow.
+
+Validate YAML changes by reading all call paths, not only the edited file.
+
+### B.5. Sibling installer parity (Medium)
+
+Workstation and Print installer behavior should mirror each other unless there is a documented reason. If the diff changes one, flag silently divergent behavior in the other.
+
+---
+
+## C. Physical Hardware Control & Crippa Bend Math
+
+Applies to: Workstation app, any code that drives TigerStop / RazorGage / Lockformer / Crippa / TigerMeasure, and any Stratus code path that produces Crippa XML / YBC / polar / cartesian row data.
+
+**These rules describe safety boundaries. Violations are not UI bugs -- they are shop-floor safety risks.**
+
+### C.1. False successes that move material (Critical)
+
+- Code that marks an item moved / done before movement actually succeeded.
+- Code that treats `ResetStockBeforeNextMove` (or equivalent workflow flag) as proof of movement.
+- Code that enters the cut / done / auto-cycle path when movement failed.
+
+### C.2. Failed pre-cycle checks must abort the cycle (Critical)
+
+- If `CheckForRetractErrorPreCut(...)` or equivalent safety pre-check returns true, the cycle command must not run, the item must not be marked done, and execution flags must be cleared.
+
+### C.3. Auto-cycle capability proven by hardware, not settings (Critical)
+
+- A user-level setting (`EnableAutomatedToolCycling`) may be the operator's request. It is not hardware capability proof. `IsAutoToolCycleAllowed()` must check hardware interconnect for non-RazorGage machines.
+
+### C.4. Stop signal must be `volatile` (High)
+
+- Loop-exit signals checked in tight background loops must be `volatile`. Non-volatile bool writes are not guaranteed visible across CPU cores.
+
+### C.5. Manual positioning validation (High)
+
+- Reject NaN, negative values, and values exceeding maximum tool length **before** the machine moves.
+
+### C.6. Crippa XML / bend-math correctness (Critical)
+
+- Crippa XML / YBC / polar / cartesian output is wrong, lossy, non-deterministic, or inconsistent between preview and export.
+- Bend reversal changes geometry incorrectly or exports a different route than the preview implied.
+- Machine radius (Material.xml CLR, ~8.281") and fitting radius (Revit, ~19.45") mixed in the same computation.
+- `CartesianRows` set on reversed `BendInstructionSet` from vertex data -- apex vertices produce worse output than bend-row math.
+- Existing geometric guards (e.g., the 11 guards in `TryBuildTwoBendParallelOffsetRows`) weakened or removed.
+- Narrow-case formulas (2-bend parallel offset) widened to 3+ bends or 3D routing without a separate analysis.
+- Radius / thickness / size / material / tooling values pulled from the wrong authority.
+
+### C.7. File operations on machine output (High)
+
+- File names must stay deterministic, sanitized, and inside Crippa path-length limits.
+- File delete logic must scope strictly to the intended Crippa batch / output area. Delete attempts and failures should be logged.
+- File operations that can escape the intended directory are Critical.
+
+### C.8. Stratus bend-data persistence (High)
+
+- Stored Stratus bend instructions must not be mutated unless the ticket explicitly requires it.
+- `BendInstructions` / `CartesianRows` / `PolarRows` must be treated as a coherent set; partial mutation produces silent UI / export divergence.
+
+### C.9. Geometric null-path guards (High)
+
+- `GetNormalizedVector()` on zero-length vectors silently returns `(1,0,0)`. Guard before calling.
+- `IsParallelTo` on `Vector3D.Zero` silently returns false.
+- `CrossProduct`, `DotProduct`, `.Location`, `.Direction`, `.Width`, `.Height`, `.Points`, `.First()`, `[0]` on nullable or empty data without a guard.
+- Empty objects (`new BendInstructionSet()`) returned as success when the user should receive a diagnosable failure.
+
+---
+
+## D. ASP.NET / C# Web Services with MongoDB
+
+Applies to: Stratus, Gtpx.Cloud.* projects, controller / service / repository stacks with Mongo persistence.
+
+### D.1. Layering and ownership violations (Critical / High)
+
+Block the PR if:
+- Controller code contains business rules that belong in a service.
+- `Gtpx.Cloud.Forge.Web` controller actions do more than request validation, FeatureClaim-compatible parameter handling, service delegation, known exception-to-HTTP mapping, and response shaping.
+- Service code performs Mongo persistence details that belong in a repository.
+- Repository code starts making business decisions that belong in a service.
+- A new route / controller / service / helper duplicates an existing seam instead of reusing or extending it.
+- A new abstraction creates a second algorithm, second source of truth, second export path, or second validation path.
+
+### D.2. FeatureClaim and authorization (Critical / High)
+
+- An action parameter named in `[FeatureClaim]` was removed as "unused."
+- `ApplicationFeatureClaimAccessMode.Any` used when the action has a real project / model / package / order context that should be checked.
+- A body-supplied project / model / package / order id trusted without an ownership / access check.
+- Wrong access mode or parameter name in authorization.
+
+### D.3. Mongo projection, scoping, and discriminator (High)
+
+- Company ID missing where the repository pattern requires it first.
+- Project / model / package / order ownership not preserved.
+- Mongo projections missing fields used downstream by services, exports, labels, reports, or jobs.
+- Document updates rebuild a subset of fields and silently drop the rest -- especially identity (`_id`), discriminator fields, and nested `Properties` / `CinxProperties`.
+- Discriminators not guarded explicitly: `CutListType`, `ToolType`, `ModelType`, `PartType`, `referenceType`.
+- Shared collections that accidentally mix cut-list and bend-list behavior without a discriminator check.
+
+### D.4. Units and value coherence (High)
+
+Stratus convention: feet in model space, inches in cut/bend/export data, `InInches` / `InFeet` field suffixes.
+
+- Feet and inches mixed in one structure without explicit suffix naming.
+- Conversion happening inline in several places instead of at a boundary helper.
+- UI value, stored value, and exported value diverge without an intentional documented reason.
+- Per-item adjustments (`CutLengthAdjustment`) applied to only one item when the aggregate requires all items, or applied to the aggregate when only one item should change.
+
+### D.5. Exception mapping in controllers (High)
+
+- Controller catches the wrong exception type or maps service validation errors to 500.
+- `ArgumentException` falls through to 500 instead of being mapped to 400.
+- Generic `catch (Exception)` in a controller.
+
+### D.6. DI registration and service lifetime (Medium / High)
+
+- New services / components / helpers that rely on DI but are not registered in `AddCommonServices` or the relevant domain extension.
+- Service lifetime choices that conflict with existing state / caching behavior (e.g., singleton services depending on scoped request / user state).
+- Controllers directly `new`-ing DI-owned dependencies.
+
+### D.7. Test seam discipline (Medium)
+
+- Tests reaching private methods by reflection.
+- Tests that assert private helper internals when the story is public / service behavior.
+- Tests that hand-build large object graphs when an existing builder / sample loader owns that shape.
+- Test helper files violating one-file-per-class convention; supporting types should live in a nearby `Models/` folder.
+- Mongo-derived regressions mocked at the transport boundary when a real-shaped sample fixture would better prove the service bug.
+
+### D.8. BendList / CutList export-specific checks
+
+Apply this section whenever the diff touches `CutListService`, BendList, CutList, Crippa / YBC / export behavior, or related tests. Inspect at minimum:
+- `Gtpx.Cloud.Services/CutList/CutListService.cs`
+- `Gtpx.Cloud.Services/CutList/ICutListService.cs`
+- Related controller actions
+- Related `.cshtml`, JS, or Vue components
+- `Gtpx.Cloud.Services.Tests.Unit/CutList/CutListServiceTests.cs`
+- Sample fixtures under `Gtpx.Cloud.Services.Tests.Unit/CutList/Samples`
+
+Actively look for:
+- Wrong bend run detection hierarchy.
+- Same-`Conduit Run Id` members split or dropped because of weak labels.
+- Full ordered member chain collapsed too early into straight sections plus bridge metadata.
+- `PartType` / `CadType` / family / category treated as bend truth instead of geometry.
+- Authored bend properties (`Angle`, `Bend Radius`, `Centerline Length`) ignored or overwritten.
+- Generic bend-radius lookup overwriting authored values.
+- Developed length missing bend arc contribution.
+- S-bends or multi-bend fittings silently returning no run instead of being supported or rejected with a diagnosable reason.
+- Wrong `CutListType` enforcement.
+- Invalid XML / YBC shape relative to sample files (`Bend_test_all.xml`, `Bend_test_cartesian.xml`, `Bend_test_polar.xml`).
+- Cartesian / polar row count mismatches.
+- DimA / DimB / radius semantics drifting between UI, stored data, XML, and YBC.
+- Malformed `BendInstructions` assumed to be complete.
+- Export paths recalculating values instead of using stored `BendInstructions` where that is the contract.
+- UI showing one value while export uses another, or vice versa.
+
+---
+
+## E. Vue 2 / Browser JavaScript
+
+Applies to: `Gtpx.Cloud.Forge.Web` frontend, Vue 2 components, jQuery-era surfaces.
+
+### E.1. Reactivity bugs (High)
+
+- New Vue state properties added after object creation without `Vue.set` -- they silently fail to update the UI.
+- Bypassing existing table controls, modal helpers, route naming, or emitted-event patterns for package-tab UI.
+
+### E.2. File-download error handling (High)
+
+- File downloads that handle the success blob but mishandle blob error responses. Pattern: `if (typeof data.text === 'function') { /* blob error path */ }`.
+
+### E.3. Common JavaScript type bugs (Medium)
+
+- `.count` used instead of `.length` -- silently undefined.
+- `==` used where `===` is required in touched JS.
+- Blob vs JSON error handling missing.
+- Undefined / non-string parameters from Vue event emit not guarded.
+
+### E.4. Frontend validation gaps
+
+- JS / Vue behavior changes without a Jasmine test (`Gtpx.Cloud.Forge.Web.Jasmine`).
+- The build does not lint JS -- review manually for type bugs.
+
+---
+
+## F. PowerShell Orchestration / Session Authority (EngineerForge / Fork)
+
+Applies to: Fork, EngineerForge, any PowerShell system with canonical session authority, registry-driven platform behavior, and orchestration runtime.
+
+### F.1. Targeted drift search
+
+Before writing findings, grep for at minimum:
+
+- `wtProfileName|WTProfileName|byWTProfile|Get-SessionRecordFromWTProfileName|Get-PlatformSourceFromWTProfile|Get-SessionKeyFromWTProfileName`
+- `launchId|session-pending-launches|sfk-v1-l-|launches\\`
+- `Write-Host|Read-Host|Read-DialogInput|RawUI\.ReadKey|Get-Content .*ConvertFrom-Json|Set-Content|Out-File`
+- `deletedAt|updatedAt|nativeSessionId|sessionId|state|Active`
+- `Ensure-Get-NativeSessionIdFromSession|Set-NativeSessionIdForSession|expectedLocationPath|forkedFromSessionKey`
+- `oneRingTargetSource|oneRingParentSessionKey|Get-OneRingSessionTargetSource|Resolve-OneRingTargetIntentSource`
+- `\$platform = 'claude'|\$platform = 'codex'|source = 'claude'|source = 'codex'|source = 'kiro'|source = 'gemini'`
+- `TerminalizeExecutionRecord|ManuallyTransitionTerminal|SubmitIncomingWorkflowCommand|workflow\["status"\]|currentRunId|File\.WriteAllText`
+- `InputPath|OutputPath|promptTextPath|responseTextPath|outputPaths|Resolve-SFFlowArtifact`
+- `--talk-session-key|--talk-project-path|Substring\([0-9]+`
+- changed tests under `src/testing/`
+
+Run `lint.cmd --files <changed-src-files>`. Lint failures are Category 5 (architecture / namespace drift) at minimum, and they are **blocking** -- the pre-commit hook enforces the same rules.
+
+Lint rules currently checked:
+- `session-headless` -- `Write-Host`, `Read-Host`, raw key reads in `src/session/`.
+- `json-read-helper` -- direct `Get-Content | ConvertFrom-Json` outside persistence helpers.
+- `atomic-write-helper` -- `Set-Content` / `Out-File` outside persistence helpers.
+- `retired-store-reference` -- `session-pending-launches`, `sfk-v1-l-`, `byWTProfile`.
+- `wt-profile-authority` -- `wtProfileName` passed to `Write-SessionRecord` / `Update-SessionRecord`.
+- `root-ps1-policy` -- unexpected `.ps1` files at repo root.
+- `parse` -- PowerShell parse errors in changed files.
+
+### F.2. Canonical session record (Critical)
+
+- The only durable session authority is `sessions/<sfSessionKey>/session.json`.
+- Pending canonical identity is allowed before native discovery. `launches\` is transient transport, not authority.
+- Forbidden canonical fields: `wtProfileName`, WT GUID, background path, runtime-only `Active`.
+- Forbidden alias drift: `sessionId` instead of `nativeSessionId`, `state` instead of explicit `deletedAt` tombstones.
+- Action paths must go through the native-ID accessor / recovery seam, not raw reads of `nativeSessionId`.
+- UI lifecycle actions (continue, fork, delete, repair) must decide native-ID availability via the accessor, not by inspecting the raw stored field.
+- `forkedFromSessionKey` means fork provenance only. Do not overload with "parent shell," "router source," "owner," or "creator."
+- Canonical `source` must agree with evidence ownership. A record with `source = codex` must use the Codex contract for prompts / cost / messages / native lifecycle.
+- Router / coordinator records use the router source plus an explicit target-intent field, never a vendor source.
+
+### F.3. Pending canonical / launch boundary (Critical)
+
+- More than one canonical record created for the same session birth.
+- A launch path creating resolved-only durable state before discovery (fake `nativeSessionId`, stored WT identity, resolved-only mapping).
+- `launches\` becoming a second authority for identity, naming, source, or ownership.
+- A failed launch leaving behind a half-real session.
+- `sfk-v1-l-*` or other launch-owned session-key models.
+- `expectedLocationPath` written as a project path instead of the platform-native evidence location.
+
+### F.4. Cache / projection (High)
+
+- `cache\session-index.json`, `cache\session-list.json`, `session-load-cache.json`, `byWTProfile`, `byNative` treated as source of truth.
+- A write path that updates cache but not the canonical record first.
+- A read path that silently trusts a projection when canonical data is missing or contradictory.
+- A cache-backed WT lookup used as canonical ownership evidence.
+- A repair path that reconciles canonical against cache instead of rebuilding cache from canonical.
+- Aggregate files (`conversation.json`) used as display authority without an explicit rebuild path.
+- Projections with multiple writers initializing the same fields differently (especially `source`).
+
+### F.5. WT and background as authority (High)
+
+- WT profiles searched by friendly name and treated as identity evidence.
+- `wtProfileName` persisted as durable business state.
+- Platform source inferred from WT profile prefixes inside session-owned logic.
+- WT-profile fallback called from normal attach / continue / refresh / active-session ownership.
+- `background.png` or its containing directory treated as authority.
+
+### F.6. Architecture and helper drift (High)
+
+- `src/session/` files containing `Write-Host`, `Read-Host`, `Read-DialogInput`, raw key reads.
+- `src/ui/` files performing canonical session writes, launch resolution, discovery, or WT mutation.
+- WT settings mutation outside `src/wt/service.ps1`, `src/wt/profiles.ps1`, `src/wt/image.ps1`.
+- Hardcoded platform names where the Platform Registry should be used.
+- Platform adapters hardcoding their own source when the registry-dispatched `$Source` is available.
+- Adapters duplicating common scaffolding (prompt validation, CLI lookup, timeout handling, exception containment).
+- Router platforms appearing in their own target catalog without a real recursive execution contract.
+- Launch behavior depending on executable filename or path shape instead of registry metadata.
+- Launch identity depending on string-template replacement (`{sfSessionKey}` substitution after launch options are generated).
+- Command-line parsing using fixed numeric `.Substring(N)` offsets instead of flag-length constants or a shared parser.
+- Sidecar / monitor / dashboard / launcher tools writing canonical state directly instead of via the command / API seam.
+
+### F.7. Orchestration rewrite (Critical)
+
+If the diff touches `src/integration/orchestration-*`, `src/integration/hooks.ps1`, workflow status, workflow execution state, run artifacts, retries, or approvals:
+
+- More than one path writes canonical workflow state.
+- Old orchestration tick / reconcile / state paths can touch new execution stores (hybrid runtime).
+- Snapshot vs journal authority is ambiguous (both look authoritative).
+- `runId` alone accepted as stale-writer protection without fencing token / lease epoch validation.
+- `workflowId`, repo path, or ticket key used as durable execution key instead of `executionId`.
+- Running workflow re-reads a mutable external recipe path as authority.
+- Heartbeats or liveness evidence used as a second canonical writer.
+- Wall-clock timestamps used for business ordering when monotonic revision is available.
+- Operator sidecar (Monitor, dashboard, launcher) hand-editing workflow JSON instead of submitting an engine command.
+- Workspace isolation enforced by descriptive fields instead of a real lease / ownership mechanism.
+
+### F.8. Safety and repair (Medium)
+
+- Repair / clean / purge paths reconciling across stores instead of scanning canonical and rebuilding derived state.
+- Cleanup silently deleting session artifacts when ownership is uncertain.
+- Destructive operations lacking `Confirm-Destructive`.
+- Path-only identity checks where multiple sessions can share a repo path.
+- Path values stored in runtime / evidence JSON read without containment-checking under the owning evidence root.
+- Prompt / transcript / evidence readers using raw `InputPath` / `OutputPath` / `promptTextPath` / `responseTextPath` values without artifact-contract validation.
+- Workflow workers reading `$PromptFile` / `$OutputPaths` / recipe `outputPaths` without containment under the execution evidence root.
+- In-memory runtime status marked success before durable evidence write succeeds.
+
+### F.9. Stitch and build parity (High)
+
+- New shared file added but not included in every required `.sln1` manifest.
+- Logic moved in source but left duplicated in stitched artifacts.
+- The same helper now behaves differently across EngineerForge / CleanSessions / github / jira / recipe because manifests load different files.
+- Docs claim "single owner" while manifests preserve multiple copies.
+
+### F.10. Test, fixture, and guardrail drift
+
+- Canonical write path without a contract test proving the canonical record remains sufficient to rebuild derived state.
+- Pending-to-resolved transition without a test proving canonical creation happens exactly once.
+- WT or background mutation path without a test proving WT/background failure does not corrupt canonical state.
+- Cache path without a test proving cache deletion triggers rebuild instead of data loss.
+- Delete / rename / repair flows without a test proving they work from canonical truth.
+- Tests / fixtures seeding deprecated architecture (stored `wtProfileName`, launch-owned fields, alias fields).
+- Aggregate / projection files without a test proving they can be deleted without invalidating canonical sessions.
+- Registry tests fossilizing a fixed platform list instead of enumerating registry-capable platforms.
+- Tests not rejecting the forbidden shape that caused the defect (leaked launch placeholders, false fork fields, direct native-ID reads).
+- Tests bypassing helper-first persistence rules on canonical data when not deliberately testing malformed input.
+
+---
+
+## G. C++ / Native (CMake + MSVC experiments)
+
+Applies to: WinTCar, any single-purpose C++ experiment driven by CMake and MSVC.
+
+### G.1. Reusability layering (High)
+
+- Files under the reusable concept layer including anything from the application layer.
+- Concept files knowing about application domain (game state, business entities).
+- Dependency direction reversed -- low-level concept depending on a higher-level application file.
+- One concept implemented across multiple files when the convention is one concept per file.
+
+### G.2. Phased delivery integrity (Medium)
+
+If the project documents phased delivery (skeleton → concepts → primitives → loop → measurement):
+- A phase declared complete without its completion criterion verified.
+- Behavior from a later phase landed before earlier phases are green.
+
+### G.3. Settings-file safety (Critical)
+
+- Full JSON re-serialization on a JSONC file (loses comments).
+- Write-back without first verifying parse success.
+- Non-atomic write (no temp file + rename).
+- Missing backup on first run.
+
+### G.4. Stop conditions ignored
+
+- Code that proceeds when settings.json fails to parse before edit.
+- Code that proceeds when the target identifier (profile GUID, session ID) is not present.
+- Code that proceeds when a backup write fails.
+- The system under test does not honor the change at all -- the experiment finding suppressed instead of reported.
+
+---
+
+## H. Static Web (no build, no server)
+
+Applies to: AIManifesto, static single-page sites with three files (HTML + JS + CSS).
+
+### H.1. Three-file architecture (Critical)
+
+- Content (page text, quiz data outside the documented inline arrays) landing in `app.js`.
+- Runtime logic (tab switching, search, glossary) landing inline in `index.html` outside the documented exception (quiz data arrays).
+- Styling values hardcoded inline instead of via CSS custom properties.
+
+### H.2. Bypassed helpers (High)
+
+- Manually creating `<span class="tt">` tooltip spans instead of letting `initTooltips()` generate them.
+- Hand-rolling tab switching instead of using `switchTab()`.
+- Hand-rolling quiz rendering or glossary back-links instead of using existing helpers in `app.js`.
+- Duplicating a CSS custom property already defined in `:root`.
+
+### H.3. Zero-dependency rule (Critical)
+
+- Adding `npm`, build steps, server requirements, or external CDN dependencies.
+
+### H.4. Glossary three-step incompleteness (Medium)
+
+- A new term added to `glossaryTerms` without a glossary table row.
+- A glossary table row added without a working `data-anchor`.
+- A `data-anchor` pointing somewhere the term is not actually used in the body.
+
+---
+
+## I. Embedded Linux / Sandboxed Filesystem (reMarkable / similar)
+
+Applies to: reMarkableAi, any project where code interacts with a sandboxed root directory and must not escape it.
+
+### I.1. Sandbox escape (Critical)
+
+- Any file operation that could escape the documented sandbox root (e.g., `SYS1000/` on reMarkable).
+- Path-traversal vulnerabilities (`../` in user-supplied paths).
+- Symlink resolution that leaves the sandbox.
+- Absolute paths used where sandbox-relative paths are required.
+
+### I.2. Interface and contract drift (High)
+
+- Renamed APIs whose behavior changed, not just signatures.
+- Stale-state handling missing on retry / reconnect paths.
+- Cleanup missing on failure paths (orphaned files, dangling handles, leftover state).
+
+### I.3. Test layer placement (Medium)
+
+- Tests landed in the wrong layer (unit test that should be a contract test, or vice versa).
+- A new architectural seam without a contract test proving the invariant holds.
+
+---
+
+## Why This Exists
+
+PRs across these repos fail in repeatable ways. Every category above blocks one or more of them:
+
+1. Business logic slips into controllers / views / UI files.
+2. New helpers duplicate existing owners.
+3. A change is broader than the ticket and hides the actual behavior change.
+4. Cache / projection becomes quiet authority over the canonical record.
+5. Presentation state (WT profile, display name, file path) gets used as identity.
+6. Feet and inches mix at the wrong boundary.
+7. UI value, stored value, and exported value drift apart silently.
+8. Discriminators are not guarded in shared collections.
+9. Geometry fallbacks silently produce wrong results instead of errors.
+10. Tests reach private methods by reflection instead of proving the public story.
+11. Tests rubber-stamp the new implementation instead of asserting the original contract.
+12. Comments and async names keep saying the old thing after behavior changes.
+13. FeatureClaim / authorization parameters get removed as "unused," breaking auth.
+14. Sibling routes copy logic instead of delegating to a shared discriminator helper.
+15. Vue 2 state changes bypass `Vue.set` and silently fail to update.
+16. New DI-owned services are added without registration or with the wrong lifetime.
+17. Refactors add the new path but leave the old one shipping in runtime.
+18. Sidecars invent commands the engine does not have.
+19. Manifests diverge; the same helper behaves differently across products.
+20. Comments claim cleanup is finished while the code still violates the boundary.
+
+This prompt exists to catch those issues before review comments, CI failures, or production data make them expensive.
+
+
+---
+
+## Appendix — Common AI Bug Families (Review Side)
+
+_Common AI bug-family appendix: the five seam/concurrency/destruction families AI writers and reviewers reliably miss. Self-contained; no external-repo references._
+
+> **Review-side appendix.** It targets the specific bug families AI writers *and* AI reviewers reliably miss — derived from a whole-repo adversarial review where ~90 findings, including 8 CRITICAL data-loss/corruption bugs, survived being written AND reviewed by Claude and Codex. None were "can't think" bugs. Every one was a **seam bug**: two correct pieces failing where they meet, under a rare condition (a crash mid-write, a reused PID, a torn file, a race, a stop pressed at the wrong instant).
+
+## Why the writer AND the reviewer both miss these
+
+An AI writing code reasons about the **happy path in the frame it can see** — this function, this diff. An AI reviewing code reasons about **the same frame**. Neither one spontaneously asks "what happens if this file is being written by another process *right now*?" or "what if a worker I already killed finishes one second from now?" because nothing in the diff forces that question. These bugs are invisible to local reasoning by construction. **This appendix's job is to make the reviewer ask the whole-system question the writer never asked.**
+
+The reviewer must treat every finding here as a *lead to disprove*, not a box to tick: for each applicable check, either produce the code that makes it safe, or file it as a finding. "I looked and it seemed fine" is not an answer to any question below.
+
+---
+
+## The five failure families (nearly every AI seam bug is one of these)
+
+For each: what it is, the mechanical search to run first, the questions the review must answer from the code, and the real bug from this codebase that IS this family.
+
+### Family 1 — Second Writer (concurrency: two paths mutate one thing)
+**The rule being broken:** exactly one code path may *change* any given piece of durable state; everyone else reads.
+
+**Search first:**
+- Every writer of each canonical store/file/global. Grep the write helpers (`Write-*`, `Set-*`, `Update-*`, `Append*`, `File.Move`, `File.WriteAllText`, `AddMember ... -Force`, direct `$Global:X =`) against each state name.
+- Every caller of the "supervisor"/"single-writer" mutation function — is it *only* the loop, or do CLI/UI/wait/poll paths call it too?
+
+**Review must answer:**
+- Name the ONE writer of this state. If you can name two paths that can run in different processes/runspaces at the same time, that is a finding unless they both pass through one lock/lease **at the mutation point** (not merely "there's a lock somewhere in the loop").
+- Is the lock/lease checked at *every door into the writing code*, or only the main one?
+- Can a heartbeat, a "read", a projection-rebuild, or a sidecar reach this write? (See Family 2.)
+
+**Instance:** the single-writer lease was enforced in the supervisor *loop* but not in `Invoke-SFWorkflowSupervisorCycle` itself, so CLI/UI `--wait` callers ran full mutating cycles concurrently with the background supervisor → `failed-transition-write` storms.
+
+### Family 2 — Reading That Writes (evidence/state wall broken)
+**The rule being broken:** records (evidence) are written once and never edited; live truth (state) is separate; **looking must never change anything**.
+
+**Search first:**
+- Every `Get-*`, `Read-*`, `Test-*`, `Resolve-*`, `Find-*`, `Show-*`, and every function whose name promises read-only. Grep their bodies for `Write-*`, `Set-*`, `Remove-*`, `New-Item`, `File.Move`, `File.Write`, `Append`, `... = ` on a `$Global:`, or a call to any mutator.
+- Every "rebuild"/"normalize on read" path — does it *persist* what it rebuilt?
+
+**Review must answer:**
+- Does calling this function a million times change anything on disk or in shared memory? If yes and the verb says read-only, finding.
+- Does a heartbeat / liveness ping / monitor refresh write canonical state? That is a second writer wearing a read costume — finding.
+- Does a read path persist a rebuilt snapshot without holding the writer lock? (It can then regress state behind a committed write.)
+
+**Instance:** `Read-SFWorkflowSnapshot` rebuilt AND wrote `workflow.json` on read, with only the file mutex — a monitor merely *looking* could shove state backward behind a just-committed command; `Get-`/`Test-` functions documented "side-effect-free" mutated the store.
+
+### Family 3 — No Fencing (stale/replaced work accepted)
+**The rule being broken:** work carries a version/epoch stamp; when it comes back, you reject it if the world has moved on.
+
+**Search first:**
+- Every place work can time out, retry, restart, or be cancelled. For each, find where its result/command is *accepted* and grep for the identity comparison (`fenceEpoch`, `runId`, `executionId`, `stepId`, a revision/version, a lease id).
+- Sibling command/result handlers: do they ALL check the stamp, or does one forget? (Diff the guard blocks side by side.)
+
+**Review must answer:**
+- If a worker/request that was already replaced or cancelled finished *right now*, would its result be accepted? If nothing compares an epoch/version, yes — finding.
+- Do all sibling handlers (`complete`, `fail`, `retry`, `escalate`, `cancel`, `restart`) enforce the SAME identity guard? A single handler missing it is the whole hole.
+- Is `runId` (or any single id) treated as sufficient? It never is — require execution + step + run + fence/epoch together.
+
+**Instance (CRITICAL):** `complete-step` and `fail-step` fully checked `fenceEpoch`; `retry-step` checked *nothing* and forced `status='running'` — a retry issued the instant after Stop resurrected a cancelled recipe.
+
+### Family 4 — "Couldn't Read It" ≠ "It's Not There" (absent vs busy vs corrupt)
+**The rule being broken:** a read returning null/empty/false has at least three causes — truly absent, being-written-right-now, or corrupt-but-recoverable — and they must not be collapsed, *especially* before anything destructive.
+
+**Search first:**
+- Every `if (-not $x)` / `if ($null -eq (Read-...))` / `if (-not (Test-Path ...))` whose *then*-branch does anything destructive or default-creating: `Remove-Item`, delete, `New-*DefaultData`, "rebuild from defaults", overwrite.
+- Every parser/loader that returns `$null` on failure — trace what the caller does with `$null`.
+
+**Review must answer:**
+- When this read returns nothing, can the code distinguish absent from locked/torn/corrupt? If not, and the next step deletes or overwrites, finding.
+- Torn-tail handling: for append-only logs, does one malformed *last* line discard the whole file, or keep the valid prefix? (Killing a process mid-append is the single most expected crash artifact.)
+- Does a transiently-offline dependency (unmounted drive, cloud-sync, AV lock) make "everything looks missing" → mass delete/rebuild?
+
+**Instances:** `Update-SessionRecord` treated an unreadable (locked) `session.json` as missing → overwrote it with a blank husk, erasing identity; one torn journal line made the *entire* journal read as corrupt and bricked the execution; `Remove-StaleCanonicalSessionRecords` deleted every Claude record when the projects folder was briefly offline.
+
+### Family 5 — Destroy on Weak Evidence (irreversible action on a coincidence)
+**The rule being broken:** the more irreversible the action, the stronger the proof required. Weak = partial name match, alive PID, empty-looking folder, path substring. Strong = the thing's own identity confirms it.
+
+**Search first:**
+- Every `Remove-Item`, delete, `taskkill`/`Stop-Process`, overwrite, truncate. For each, find what *proves* the target is the intended one.
+- Grep for the weak-evidence tells: `-Filter "*...*"` / wildcard name matches, `Test-SFProcessAlive`/PID-only kills, substring/`-like`/`-match` on names, `-Path` (glob-expanding) instead of `-LiteralPath`, `Split-Path -Leaf` matches, `[substring 0..N]` id fragments.
+- Every `Confirm-*`/warning string near a destructive action — does the text match what the code actually deletes?
+
+**Review must answer:**
+- What is the STRONGEST evidence tying this delete/kill to its target — the target's own identity (internal id, cwd inside the artifact, process start-time + command-line), or a coincidence?
+- On a reused PID / a filename fragment collision / an offline dependency, does this destroy the wrong thing?
+- Does the confirmation prompt honestly describe the destruction? (A "rebuild derived cache" prompt that deletes canonical records is a blocking finding.)
+- Under ambiguity, does the code preserve-and-report, or delete?
+
+**Instances:** Gemini deletion by 8-char filename substring across every project (no content-id check); worker retirement `taskkill`ing recorded PIDs with no start-time/command-line identity (reused PID kills an unrelated process); the offline-folder mass delete above, behind a mislabeled confirmation.
+
+---
+
+## PowerShell-specific traps (grep these on every changed file)
+
+These are language-level footguns the review found repeatedly. They are cheap to grep and each is a real finding here.
+
+- **Automatic-variable shadowing** — assignment to `$matches`, `$args`, `$profile`, `$PID`, `$error`, `$input`, `$host`, `$foreach`. Grep `^\s*\$(matches|args|profile|PID|error|input|host)\s*=`. Real hits: `$matches = @()` in supervisor-process and helper-snapshot code silently returned the wrong object.
+- **Empty-array collapse / `$null`-on-left** — `if ($x -eq $null)` (put `$null` LEFT: `if ($null -eq $x)`); a pipeline/`if`-expression assigned to a var that a later `.Count`/`-contains` trusts, without `@(...)` wrapping. Real hits: linter returning a scalar instead of a one-item array; `[int]$null = 0` silently disabling a diagnosis (`0 -gt 60000` never fires).
+- **`[int]`/`[bool]` cast of empty/garbage** — `[int]$something` where the value can be `''` or non-numeric throws a terminating error. Grep `\[int\]\$` near arg/JSON/receipt reads. Real hits: `--fence-epoch=` empty crashed the tool; a non-numeric `cacheVersion` crashed the load path; a `0001-01-01` timestamp overflowed `[int]` and aborted diagnosis for ALL executions.
+- **`-Path` vs `-LiteralPath`** — `Remove-Item`/`Test-Path`/`Get-Item -Path` glob-expands `[ ] * ?`. Any path from data (recipe, session key with brackets) must use `-LiteralPath`. Real hit: bracketed session keys threw at launch; recipe output paths glob-deleted.
+- **"Atomic" write that isn't** — `Move-Item -Force` (delete-then-move, non-atomic window) instead of `[System.IO.File]::Move($t,$p,$true)` / `File.Replace`; a read helper with NO mutex racing an atomic write. Real hit: `Write-JsonFileAtomic` had a window where the file did not exist.
+- **Mutex not released on abandon** — `WaitOne()` that throws `AbandonedMutexException` (a process died holding it) landing in a generic catch → the mutex is now owned and never released → every future write to that path fails process-lifetime. Grep `WaitOne(`. Wrap it specifically.
+- **`.Result` / `ReadToEnd` ordering** — writing stdin before attaching stdout/stderr readers (pipe deadlock), or `.Result` with no timeout (hangs forever if a grandchild inherits the pipe). Grep `ReadToEndAsync`, `.Result`, `Write-*Input`.
+- **`ConvertTo-Json -Depth` truncation** — deep objects silently serialize as `System.Object[]`/type-name text past the depth cap; a round-trip through `ConvertFrom-Json | ConvertTo-Json` on a foreign config (WT settings, `~/.claude.json`) drops comments and `$`-keys. Grep `ConvertTo-Json` writing foreign/user files.
+- **Merge-vs-replace on foreign config** — reading a tool's config then writing back only YOUR subset destroys everything else. Grep writers of `~/.claude.json`, `settings.json`, any file EF does not own; confirm they preserve all keys. Real hits: `Write-MCPConfigForClaude` wiped OAuth/projects; `Set-ClaudePermissionMode` wiped the allow/deny lists.
+
+---
+
+## Blocking gate — reject the change unless
+
+- Every destructive action names the **strong identity** that proves its target (Family 5).
+- Every null/empty/false read that precedes a destroy or default-create **distinguishes absent from unreadable** (Family 4).
+- Every retry/complete/fail/cancel/escalate sibling enforces the **same fence/epoch guard** (Family 3).
+- No read-verb function mutates; no heartbeat/monitor/read path writes canonical state (Family 2).
+- Each mutated state has **one named writer** gated at the mutation point (Family 1).
+- The changed files are grep-clean of the PowerShell traps above (or each hit is justified).
+- **A test reproduces the seam:** the review must be able to point at a red-green test that presses Stop mid-retry, tears a file mid-write, reuses a PID, takes the dependency offline, or races two writers. If the seam can't be tested, it isn't verified.
+
+A finding in any family is not "style." Each is a path to data loss, a resurrected stopped job, a wrong-target delete, or a silent hang — the exact outcomes that shipped here past two AI reviewers.

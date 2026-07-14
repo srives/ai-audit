@@ -124,7 +124,7 @@ Gate: run the RFC §9 experiment first — Intent blocks on the next three plans
 |---|---|---|
 | 6 | `PLAN_RULES.md` | Canonical home of the **FULL Intent block** (RFC §4 long form: why / user value / must remain true / non-goals / failure shape). New short section after Stage 0 Wish Hygiene (line 41): every plan carries `## Intent` derived from the wish; required for non-trivial slices only (answers RFC open question 1). |
 | 7 | `RUN_PLAN.md` | Phase 0 understanding (lines 299, 424) gains "intent + failure shape"; constraint-extraction field list (line ~105) adds intent; new stop condition: *if intent conflicts with the plan or spec, stop and surface it — the spec wins until changed by RFC* (RFC §3). |
-| 8 | `TEST_RULES.md` | One rule: **regression tests must seed the motivating failure shape**, not just prove the happy path. Point to the red-capable-loop rule in `PR_TOUGH2.md` §5 — do not restate it. |
+| 8 | `TEST_RULES.md` | One rule: **regression tests must seed the motivating failure shape**, not just prove the happy path. Point to the red-capable-loop rule in `PR_TOUGH.md` §7 — do not restate it. |
 | 9 | `PR_TO_PROMPT.md` | Each prx finding carries a one-line intent (why the fix exists) so the executor cannot make a literal-but-wrong fix. |
 | 10 | `PR_TOUGH.md` | Promote Intent Drift from preflight question to formal defect category **§3.11** — RFC open question 2, answered by data. Consider a hard-gate floor only if drift findings recur. |
 

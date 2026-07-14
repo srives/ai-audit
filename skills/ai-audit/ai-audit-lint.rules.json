@@ -1,0 +1,263 @@
+{
+  "$schema": "ai-audit rule catalog — every rule resolves to a fixed point. Tiers: 'governance' (on by default; the checks nothing else runs), 'code' (opt-in; may overlap the repo's own linters), 'commands' (opt-in; runs the configured build/test/lint/format).",
+  "rules": [
+    {
+      "id": "GOV-LEN",
+      "tier": "governance",
+      "kind": "max-lines",
+      "target": ["CLAUDE.md"],
+      "max": 200,
+      "warn": 120,
+      "severity": "error",
+      "message": "governance file over length budget",
+      "fix": "split via @-imports or move detail to skills",
+      "appliesTo": "*"
+    },
+    {
+      "id": "GOV-SECRET",
+      "tier": "governance",
+      "kind": "forbidden-pattern",
+      "target": ["*.md"],
+      "pattern": "\\b(sk-[A-Za-z0-9]{16,}|ghp_[A-Za-z0-9]{20,}|pat-[A-Za-z0-9]{16,}|api[_-]?key\\s*[:=]\\s*['\"][^'\"]{12,})",
+      "flags": "i",
+      "severity": "error",
+      "message": "possible hardcoded secret in governance",
+      "fix": "remove the secret; use an env var or secret store",
+      "appliesTo": "*"
+    },
+    {
+      "id": "GOV-STALE-MODEL",
+      "tier": "governance",
+      "kind": "forbidden-pattern",
+      "target": ["*.md"],
+      "pattern": "\\b(?:Opus|Sonnet|Haiku|Fable)\\s+[0-9]+(?:\\.[0-9]+)?\\b",
+      "flags": "",
+      "allowedFromConfig": "currentModels",
+      "captureGroup": 0,
+      "severity": "warn",
+      "message": "model version not in current set",
+      "fix": "update to a current model (current set lives in .ai-audit.json)",
+      "appliesTo": "*"
+    },
+    {
+      "id": "GOV-REF-AGENTS",
+      "tier": "governance",
+      "kind": "required-pattern",
+      "target": ["CLAUDE.md"],
+      "pattern": "@AGENTS\\.md|See\\s+`?AGENTS\\.md`?",
+      "onlyIfExists": "AGENTS.md",
+      "severity": "warn",
+      "message": "CLAUDE.md does not reference AGENTS.md (Claude Code won't auto-load it)",
+      "fix": "add a `See @AGENTS.md` line",
+      "appliesTo": "*"
+    },
+    {
+      "id": "GOV-FILES",
+      "tier": "governance",
+      "kind": "files-present",
+      "target": [],
+      "configList": "requiredGovernance",
+      "severity": "warn",
+      "message": "required governance file missing",
+      "fix": "add it, or adjust requiredGovernance in .ai-audit.json",
+      "appliesTo": "*"
+    },
+    {
+      "id": "GOV-FRONTMATTER",
+      "tier": "governance",
+      "kind": "frontmatter-fields",
+      "target": ["*.bas.md"],
+      "requiredFields": ["type", "profile"],
+      "severity": "warn",
+      "message": "typed doc missing required front-matter",
+      "fix": "add type: and profile: to the front matter",
+      "appliesTo": "*"
+    },
+    {
+      "id": "FOCUS-DIRECTIVES",
+      "tier": "governance",
+      "kind": "focus-directives",
+      "target": [],
+      "severity": "error",
+      "message": "always-loaded governance file over the directive budget",
+      "fix": "move rules to on-demand files via progressive disclosure; every always-loaded line must be load-bearing",
+      "appliesTo": "*"
+    },
+    {
+      "id": "FOCUS-COMBINED",
+      "tier": "governance",
+      "kind": "focus-combined",
+      "target": [],
+      "severity": "error",
+      "message": "combined always-loaded directive count over budget",
+      "fix": "the agent holds ALL always-loaded files at once — shrink the set, not just each file",
+      "appliesTo": "*"
+    },
+    {
+      "id": "FOCUS-MIDDLE",
+      "tier": "governance",
+      "kind": "focus-middle",
+      "target": [],
+      "severity": "warn",
+      "message": "critical rule buried mid-file",
+      "fix": "front-load hard gates, or restate them at the end — the middle is the weakest position",
+      "appliesTo": "*"
+    },
+    {
+      "id": "FOCUS-NEGATION",
+      "tier": "governance",
+      "kind": "focus-negation",
+      "target": [],
+      "severity": "warn",
+      "message": "prohibition-heavy governance",
+      "fix": "rephrase prohibitions positively where possible ('use X' beats 'never use Y')",
+      "appliesTo": "*"
+    },
+    {
+      "id": "FOCUS-DUP",
+      "tier": "governance",
+      "kind": "focus-dup",
+      "target": [],
+      "severity": "warn",
+      "message": "duplicate directive across the always-loaded set",
+      "fix": "keep one canonical statement; point to it from elsewhere",
+      "appliesTo": "*"
+    },
+    {
+      "id": "FOCUS-SIGNAL",
+      "tier": "governance",
+      "kind": "focus-signal",
+      "target": [],
+      "severity": "warn",
+      "message": "low directive density in an always-loaded file",
+      "fix": "move narrative to docs; an always-loaded file should be rules, not prose",
+      "appliesTo": "*"
+    },
+    {
+      "id": "FOCUS-VAGUE",
+      "tier": "governance",
+      "kind": "focus-vague",
+      "target": [],
+      "severity": "warn",
+      "message": "vague rule with no checkable behavior",
+      "fix": "state the observable action, or delete the slogan",
+      "appliesTo": "*"
+    },
+    {
+      "id": "CODE-EMPTY-CATCH",
+      "tier": "code",
+      "kind": "forbidden-pattern",
+      "target": ["**/*.{ts,js,jsx,tsx,cs,java}"],
+      "pattern": "catch\\s*(\\([^)]*\\))?\\s*\\{\\s*\\}",
+      "flags": "",
+      "severity": "warn",
+      "message": "empty catch swallows the error",
+      "fix": "handle, log, or rethrow",
+      "appliesTo": "*"
+    },
+    {
+      "id": "CODE-JS-EQ",
+      "tier": "code",
+      "kind": "forbidden-pattern",
+      "target": ["**/*.{js,jsx}"],
+      "pattern": "[^=!<>]==[^=]|[^!]!=[^=]",
+      "flags": "",
+      "severity": "warn",
+      "message": "loose equality (== / !=); prefer === / !==",
+      "fix": "use strict equality",
+      "appliesTo": ["js"]
+    },
+    {
+      "id": "CODE-JS-COUNT",
+      "tier": "code",
+      "kind": "forbidden-pattern",
+      "target": ["**/*.{js,jsx,ts,tsx}"],
+      "pattern": "\\.count\\b(?!\\()",
+      "flags": "",
+      "severity": "warn",
+      "message": "`.count` on a JS collection (arrays use `.length`)",
+      "fix": "use .length",
+      "appliesTo": ["js"]
+    },
+    {
+      "id": "CODE-DATETIME-NOW",
+      "tier": "code",
+      "kind": "forbidden-pattern",
+      "target": ["**/*.cs"],
+      "pattern": "DateTime\\.Now\\b",
+      "flags": "",
+      "severity": "warn",
+      "message": "DateTime.Now (non-UTC, machine-local)",
+      "fix": "use DateTimeOffset/UtcNow or an explicit clock",
+      "appliesTo": ["dotnet"]
+    },
+    {
+      "id": "CODE-SESSION-WRITEHOST",
+      "tier": "code",
+      "kind": "forbidden-pattern",
+      "target": ["src/session/**/*.ps1", "src/session/**/*.psm1"],
+      "pattern": "Write-Host|Read-Host|\\$host\\.UI",
+      "flags": "",
+      "severity": "error",
+      "message": "console I/O in the headless session layer",
+      "fix": "move UI to the presentation layer; return values instead",
+      "appliesTo": ["powershell"]
+    },
+    {
+      "id": "CODE-ROOT-PS1",
+      "tier": "code",
+      "kind": "count-files",
+      "target": ["*.ps1"],
+      "op": "<=",
+      "nFromConfigLen": "rootPs1Allow",
+      "severity": "warn",
+      "message": "unexpected .ps1 at repo root",
+      "fix": "move it into src/ or add to rootPs1Allow",
+      "appliesTo": ["powershell"]
+    },
+    {
+      "id": "BUILD-GREEN",
+      "tier": "commands",
+      "kind": "command-exit-zero",
+      "target": [],
+      "cmdFromConfig": "buildCmd",
+      "severity": "error",
+      "message": "build failed",
+      "fix": "fix the build",
+      "appliesTo": "*"
+    },
+    {
+      "id": "TEST-GREEN",
+      "tier": "commands",
+      "kind": "command-exit-zero",
+      "target": [],
+      "cmdFromConfig": "testCmd",
+      "severity": "error",
+      "message": "tests failed",
+      "fix": "fix the failing tests",
+      "appliesTo": "*"
+    },
+    {
+      "id": "LINT-GREEN",
+      "tier": "commands",
+      "kind": "command-exit-zero",
+      "target": [],
+      "cmdFromConfig": "lintCmd",
+      "severity": "warn",
+      "message": "lint failed",
+      "fix": "fix lint findings",
+      "appliesTo": "*"
+    },
+    {
+      "id": "FORMAT-CHECK",
+      "tier": "commands",
+      "kind": "command-exit-zero",
+      "target": [],
+      "cmdFromConfig": "formatCmd",
+      "severity": "warn",
+      "message": "formatter check failed",
+      "fix": "run the formatter",
+      "appliesTo": "*"
+    }
+  ]
+}

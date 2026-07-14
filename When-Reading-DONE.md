@@ -1,15 +1,15 @@
 # When Reading DONE
 
-`READ source AS DONE` uses the `basicai.done.v1` named profile contract.
+Reading a source document as a typed `DONE` value uses the `done.v1` named profile contract.
 
-The goal is not to prove completion at compile time. The goal is to parse a readable completion standard into a stable typed value that `IS` can evaluate with deterministic checks, AI evaluation, or both according to the document and declared authority.
+The goal is not to prove completion at compile time. The goal is to parse a readable completion standard into a stable typed value that done-evaluation can evaluate with deterministic checks, AI evaluation, or both according to the document and declared authority.
 
 ## Accepted Markdown Shape
 
 ```md
 ---
 type: DONE
-profile: basicai.done.v1
+profile: done.v1
 ai: CLAUDE
 strictness: strict
 ---
@@ -34,12 +34,12 @@ The compiler/runtime maps recognized content into:
 
 | DONE property | Source |
 |---|---|
-| `.TITLE$` | document title or first heading |
-| `.SUMMARY$` | front matter summary or first paragraph when present |
-| `.CRITERIA` | `Criteria` section |
-| `.RULES` | `Rules` section |
-| `.REVIEW` | `Review` section |
-| `.AI` | front matter `ai` value, if present |
+| `title` | document title or first heading |
+| `summary` | front matter summary or first paragraph when present |
+| `criteria` | `Criteria` section |
+| `rules` | `Rules` section |
+| `review` | `Review` section |
+| `ai` | front matter `ai` value, if present |
 
 The raw source text, source path or artifact identity, profile name, and unrecognized sections are preserved for provenance.
 
@@ -51,22 +51,22 @@ A `DONE` document is malformed when:
 - `profile` is present and is not a supported DONE profile;
 - required sections for the selected profile are missing;
 - front matter is syntactically invalid;
-- `.AI` names an unknown AI-pak identifier.
+- `ai` names an unknown installed AI identifier.
 
-Malformed `DONE` input is a typed-document diagnostic in the `BAS04xx` family.
+Malformed `DONE` input is reported as a typed-document diagnostic.
 
-## IS Evaluation
+## Done-Evaluation
 
-`IS` returns `BOOLEAN`.
+Done-evaluation returns a boolean.
 
 Accepted forms:
 
-```basic
-IF evaluation IS ModelDone THEN END SUCCESS
-IF result IS Done USING CLAUDE THEN END SUCCESS
-IF result IS Done USING ANY THEN END SUCCESS
+```text
+evaluate a result against a DONE document
+evaluate a result against a DONE document using one named AI
+evaluate a result against a DONE document using any available AI
 ```
 
-`IS ... USING` accepts singular `AI | ANY` only. Multi-review workflows belong to `JUDGE`.
+Done-evaluation accepts a single named AI or "any" only. Multi-reviewer workflows belong to judgment.
 
-The compiler does not claim that a `DONE` document is semantically true. It only validates the profile shape and target representability. Runtime evaluation may execute deterministic checks, AI review, or both, according to the `DONE` document and available authority.
+The toolchain does not claim that a `DONE` document is semantically true. It only validates the profile shape and target representability. Runtime evaluation may execute deterministic checks, AI review, or both, according to the `DONE` document and available authority.

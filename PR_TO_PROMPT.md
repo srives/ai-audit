@@ -21,7 +21,7 @@ A review without (B) is not done. A prompt without (A) has nothing to fix.
 
 1. **Capture state.** `git status --short`, `git log` to find the commit(s) under review, `git diff` / `git show` the change. Read any implementer artifact (`constraints.md`, the report, the slice/ticket the work implemented).
 2. **Review adversarially under `PR_TOUGH.md`** (every category, in severity order). Verify the diff against the **acceptance criteria** of the slice/plan it implemented. Distinguish **introduced vs pre-existing** findings (check against the baseline commit). For large diffs, parallelize the reading with subagents and synthesize the verdict yourself.
-3. **Verify, don't just read — but targeted only.** Run *only* change-related checks to confirm or refute a finding (`dotnet test` on the touched area, `dotnet fantomas src tests --check`, `doc-lint.ps1` for docs, EngineerForge prototype behavior for AIR shape). **Re-run the executor's own verification commands** (the `constraints.md` sweep, the named tests) — claims are leads, not proof. **Never run the full conformance suite to review.** If you cannot run a single targeted check, say so as a finding (and tell the executor to build a focused runner).
+3. **Verify, don't just read — but targeted only.** Run *only* change-related checks to confirm or refute a finding (focused tests on the touched area, the repo's lint/format check, targeted behavior checks for any emitted artifacts). **Re-run the executor's own verification commands** (the `constraints.md` sweep, the named tests) — claims are leads, not proof. **Never run the full conformance suite to review.** If you cannot run a single targeted check, say so as a finding (and tell the executor to build a focused runner).
 4. **Trace call paths; never infer completeness from diff size.** A *small* diff can mean prior work already did most of it — a small or net-neutral change that closes the last real gap is **success**, not "incomplete." A *large* diff can hide an abstraction added without deleting the wires it replaced. Judge consolidation by following the actual call paths (who routes through what), not by `+/-` counts.
 5. **Grade** on the 0–100 letter scale (below) and decide the verdict.
 6. **Write the file** with all the Required Sections, including the verbatim Operating Contract block and the work-list + Report footer that make it executable.
@@ -67,13 +67,13 @@ You are addressing this handoff. Work under these rules (re-read them; do not wo
 - Re-read, don't recall. At start, after any interruption, and roughly every 30 minutes,
   re-read: this file, the slice/plan/spec it relates to, the source files you will touch
   (fresh from disk — the tree changes under you), and the canonical governance set:
-  AGENTS.md, PROF.md, RUN_PLAN.md, PLAN_RULES.md, PR_TOUGH.md, and the relevant specs/ files.
+  AGENTS.md, PERSONA.md, RUN_PLAN.md, PLAN_RULES.md, PR_TOUGH.md, and the relevant specs/ files.
 - No unverified claim becomes a result. Ground every assertion in the real artifact — the
-  file, the test output, the running engine (EngineerForge), the spec section. "It should
+  file, the test output, the running system, the spec section. "It should
   work" is not evidence; cite file:line, a named test result, or a spec clause. This rule is
   load-bearing; the rest serve it.
 - Decide and record; escalate only true gates. For an ordinary decision, make it on
-  PROF.md / PR_TOUGH.md judgment, write one line in the Decisions footer, and continue — do
+  PERSONA.md / PR_TOUGH.md judgment, write one line in the Decisions footer, and continue — do
   not stop for routine input. Escalate to the human only for genuine governance gates: a
   spec/contract change (RFC), promotion of a later-track surface, or any destructive or
   outward-facing action. Never halt on a routine choice; never self-authorize a gate.
@@ -132,7 +132,7 @@ Committed + pushed: <hash(es), or "staged — not authorized to commit">
 
 ## Grading & verdict conventions
 
-- **0–100 with letter** (A 90+, B 80+, C 70+, D 60+, F <60), per `PR_TOUGH.md`'s Architectural Drift Score. Deduct hardest for `PR_TOUGH.md` Category 1 (spec/code drift) and Category 2 (pipeline boundary), then EngineerForge alignment (4.5) and feature-gate violations (4.6), then F#/AST/diagnostic drift (3–5), then test and documentation discipline (6–7). A contract change without a consumer sweep is a critical-tier deduction.
+- **0–100 with letter** (A 90+, B 80+, C 70+, D 60+, F <60), per `PR_TOUGH.md`'s Architectural Drift Score. Deduct hardest for the highest-severity `PR_TOUGH.md` categories (canonical-truth and boundary violations), then architecture-alignment and feature-gate violations, then language/shape drift, then test and documentation discipline. A contract change without a consumer sweep is a critical-tier deduction.
 - **Verdict:** BLOCK (spec drift, pipeline-boundary or orchestrator-schema break, safety guard disabled) · REWORK (significant drift, missed consumers) · MERGE-WITH-FOLLOW-UP (minor/fixable) · MERGE.
 - **Introduced vs pre-existing** must be labeled — never grade the implementer down for debt they merely sat beside.
 - **Net-negative surface** is a first-class criterion: a consolidation that *added* an abstraction without deleting the wires it replaces has failed its own acceptance, even if it works. **But** a small or net-neutral diff is *correct* when prior work already consolidated most paths — verify by tracing the call paths, and do not down-grade complete-but-small work or pressure an executor to manufacture a larger delta.

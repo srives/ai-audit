@@ -30,7 +30,6 @@ Drop-in audit prompts. Hand one to an AI agent in any repo and get back a priori
 | `AI-AUDIT.md` | The four governance files (`CLAUDE.md`, `AGENTS.md`, `PR_TOUGH.md`, `RUN_PLAN.md`) against current best practice, project fit, and cross-file coherence. | Findings with file:line citations, per-file A–F grades, top-5 fixes, decomposition plan for over-budget files. |
 | `AI_AUDIT_GOVERNANCE_REVIEW.md` | Cognitive load of governance files — will the AI keep the critical rules *active* while working, or skim them into a hunch? | 10-axis rubric (purpose, authority, actionability, front-loading, load size, duplication, task fit, verification, anti-drift, friction) with A–F grade. |
 | `AI_AUDIT_SEAM_REVIEW.md` | Whether `RUN_PLAN.md` / `PR_TOUGH.md` force seam reasoning: state ownership, consumers, sibling paths, partial writes, repeat-safety. | Drop-in gate text (pre-edit sweep, review gate, refusal rule) plus minimum templates for repos missing the files. |
-| `PR_TOUGH2.md` | Companion review to `PR_TOUGH.md` (run alongside it, never replacing it): correct-surface review, standards-vs-spec separation, smell baseline, red-capable repros, falsifiable hypotheses, public-seam testing, shallow-module recurrence. | A generic drop-in review companion with a **§16 Tailoring Pass** for re-grounding it to a target repo (worked installs: `remarkableAI\PR_TOUGH2.md`, `AI-BASIC\PR_TOUGH2.md`). |
 
 Invocation, in an AI session inside the target repo:
 
@@ -95,8 +94,8 @@ Governance for the AI-BASIC language's typed document reads.
 
 | File | Purpose |
 |---|---|
-| `Markdown-bAsIc-Rules.md` | Governed Markdown subset: front matter, headings, markers readable by the compiler/runtime. |
-| `YAML-bAsIc-Rules.md` | Named profile contracts for YAML governance/config documents. |
+| `Markdown-Rules.md` | Governed Markdown subset: front matter, headings, markers readable by the compiler/runtime. |
+| `YAML-Rules.md` | Named profile contracts for YAML governance/config documents. |
 | `When-Design-Makes-Slices.md` | Required metadata shape of slices produced by `DESIGN` (the shape; `MakeSlices.md` owns the thinking). |
 | `When-Reading-DONE.md` | The `basicai.done.v1` contract — parsing a completion standard into a typed value `IS` can evaluate. |
 | `EXTERNAL_FILES_ORCH.md` | Registry of Markdown files outside compiled source that EngineerForge orchestration reads into prompts and recipes. |
@@ -113,8 +112,8 @@ Known copies of these files in other repos, and their state as of **2026-07-09**
 | `AI-BASIC\prompts\` (6 files) | Source the prompt catalog was imported from | **Byte-identical** to this repo |
 | `AI-BASIC\governance\run_plan.template`, `pr_tough.template` | Templates for generating target-tailored files | **Only in AI-BASIC** — not yet mastered here |
 | `AIManifesto\ai-audit.md` | Fork of `AI-AUDIT.md` + an inline "Cognitive Load" §2.6 | **Diverged.** That §2.6 idea evolved here into the standalone `AI_AUDIT_GOVERNANCE_REVIEW.md`; the fork should be refreshed from the masters |
-| `PR_TOUGH2.md`, `AI_AUDIT_GOVERNANCE_REVIEW.md` | Newest masters | **Mastered only here** — not in `AI-BASIC\governance\` |
-| `remarkableAI\PR_TOUGH2.md`, `AI-BASIC\PR_TOUGH2.md` | Tailored installs of the PR_TOUGH2 master | **Tailored** per the master's §16 Tailoring Pass — deliberate divergence (tailoring ≠ drift, sync rule 2) |
+| `AI_AUDIT_GOVERNANCE_REVIEW.md` | Newest master | **Mastered only here** — not in `AI-BASIC\governance\` |
+| `PR_TOUGH.md` | Rebuilt as one combined framework (former `PR_TOUGH2.md` merged in; old version kept as `PR_TOUGH.old`) | External copies of the retired `PR_TOUGH2.md` in `remarkableAI\` / `AI-BASIC\` are now standalone — no longer tracked as installs of a master |
 
 Sync rules for this repo:
 
@@ -133,7 +132,6 @@ ai-audit/
 ├── AI-AUDIT.md                        # ── 1. audit toolkit ──
 ├── AI_AUDIT_GOVERNANCE_REVIEW.md
 ├── AI_AUDIT_SEAM_REVIEW.md
-├── PR_TOUGH2.md
 │
 ├── AGENTS.md                          # ── 2. governance masters ──
 ├── CLAUDE_.md
@@ -156,8 +154,8 @@ ai-audit/
 ├── MakeSlices.md
 ├── SamplePromptPlanToRecipe.md
 │
-├── Markdown-bAsIc-Rules.md            # ── 5. bAsIc document contracts ──
-├── YAML-bAsIc-Rules.md
+├── Markdown-Rules.md            # ── 5. bAsIc document contracts ──
+├── YAML-Rules.md
 ├── When-Design-Makes-Slices.md
 ├── When-Reading-DONE.md
 └── EXTERNAL_FILES_ORCH.md

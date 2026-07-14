@@ -2,9 +2,9 @@
 
 ## Purpose
 
-This governance document defines the required shape of slice sections produced by AI-BASIC `DESIGN` when it turns a plan, wish, or specification into implementation slices.
+This governance document defines the required shape of slice sections produced by the design step when it turns a plan, wish, or specification into implementation slices.
 
-`DESIGN` is not merely summarizing work. It is producing executable planning material for AI workers and EngineerForge-style orchestration. Therefore each slice must identify the expertise needed to execute it.
+The design step is not merely summarizing work. It is producing executable planning material for AI workers and orchestration-engine execution. Therefore each slice must identify the expertise needed to execute it.
 
 ## Required Slice Metadata
 

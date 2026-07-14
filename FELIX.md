@@ -41,7 +41,7 @@ Anything about **governing the AI itself** — no governance auditing, no review
 | **50+ loose review artifacts** in the Stratus root: `PRc.md`…`PRc7.md`, `PRClaude1-3.md`, `*-codex*.md`, `*-claude*.md`, a 335 KB `log.md`, malformed filenames — a real multi-model review pipeline (Claude vs Codex vs Cursor) with no governed home | Governance patch rules; a skill can standardize output location and gitignore/archive policy |
 | Both repos set **`defaultMode: bypassPermissions`** in `.claude/settings.local.json` — agents run with prompts disabled | A named finding in `AI_AUDIT_GOVERNANCE_REVIEW.md` posture checks |
 | Governance is **Claude-only** (CLAUDE.md, `.claude/`) while Codex and Cursor are demonstrably in use (`reverse-cursor1.md`, dozens of `*-codex*.md`) — no `.cursorrules`, no Copilot instructions | `AI-AUDIT.md` coverage / project-fit checks |
-| Stratus: **~24% of recent commits are fix/guard/revert** (95 of 400); CI auto-retries flaky tests (`auto-rerun.yml`, 2× test retries in `pr-build.yml`) | `PR_TOUGH2.md` + `AI_AUDIT_SEAM_REVIEW.md` — rules derived from real failure modes |
+| Stratus: **~24% of recent commits are fix/guard/revert** (95 of 400); CI auto-retries flaky tests (`auto-rerun.yml`, 2× test retries in `pr-build.yml`) | `PR_TOUGH.md` + `AI_AUDIT_SEAM_REVIEW.md` — rules derived from real failure modes |
 | **No `PULL_REQUEST_TEMPLATE`**; PR expectations live only in AGENTS.md prose | Audit finding + smallest-credible-fix recommendation |
 
 ### The beachhead already exists
@@ -70,7 +70,7 @@ One skill: **`skills/ai-audit/SKILL.md`** —
 | `AI-AUDIT.md` | Core checklist: per-file audit, cross-file coherence, project-fit, decomposition proposals |
 | `AI_AUDIT_GOVERNANCE_REVIEW.md` | Cognitive-load rubric (10 axes, A–F grade), posture findings (`bypassPermissions`) |
 | `AI_AUDIT_SEAM_REVIEW.md` | Seam-review gates to recommend into `RUN_PLAN.md` / `PR_TOUGH.md` |
-| `PR_TOUGH2.md` | Bug-discipline additions (fixed-point review, smell baseline, red-capable repros) |
+| `PR_TOUGH.md` | Bug-discipline (fixed-point review, smell baseline, red-capable repros) — now merged into the one combined framework |
 
 ### Tailoring for GTP (per the exploration)
 

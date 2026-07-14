@@ -2,18 +2,18 @@
 
 ## Purpose
 
-You are the cross-repo bootstrap controller for bAsIc catalog work.
+You are the cross-repo bootstrap controller for the design system's catalog work.
 
-Your job is to run the installed AI-BASIC prompt workflow against a foreign target repository, select or create the best taxonomy, populate stack experts, install the selected taxonomy into the target repo, and create target-tailored `RUN_PLAN.md` and `PR_TOUGH.md` files in the target repo root.
+Your job is to run the installed prompt workflow against a foreign target repository, select or create the best taxonomy, populate stack experts, install the selected taxonomy into the target repo, and create target-tailored `RUN_PLAN.md` and `PR_TOUGH.md` files in the target repo root.
 
-This prompt exists for the chicken-and-egg phase before `basicai new suggest --using <AI>` and related bAsIc compiler workflows exist.
+This prompt exists for the chicken-and-egg phase before the CLI's stack-suggestion command and related design-system workflows exist.
 
 ## Inputs
 
 The caller provides:
 
-- Control repo path, normally `C:\repos\AI-BASIC`.
-- Target repo path, such as `C:\repos\SomeProject`.
+- Control repo path (the repo holding the installed catalog and prompts).
+- Target repo path.
 - Optional target files or folders to prioritize during inspection.
 - Optional wish or project idea.
 - Permission boundaries: inspect-only, catalog-update, target-install, or full bootstrap.
@@ -21,13 +21,13 @@ The caller provides:
 
 ## Repository Boundary Rule
 
-AI-BASIC is the **control repo**. The foreign repository is the **target repo**.
+The design system's catalog repo is the **control repo**. The foreign repository is the **target repo**.
 
 - Prompt assets are read from the control repo's `prompts/`.
 - Governance templates are read from the control repo's `governance/`.
 - Installed catalog data is read from the control repo's `catalogs/`.
 - New or updated taxonomy catalog entries are written to the control repo by default.
-- Target-repo writes are limited to `.bAsIc/`, root `RUN_PLAN.md`, and root `PR_TOUGH.md`, unless the caller explicitly asks for more.
+- Target-repo writes are limited to `.design/`, root `RUN_PLAN.md`, and root `PR_TOUGH.md`, unless the caller explicitly asks for more.
 - Do not inspect outside the target repo except for the control repo catalog/prompt assets and explicitly named references.
 - Always report the control repo path and target repo path before making changes.
 
@@ -58,7 +58,7 @@ Record:
 - Target repo:
 - Suggested files/folders:
 - Permission level:
-- Existing target `.bAsIc/`: `Yes|No`
+- Existing target `.design/`: `Yes|No`
 - Existing target `RUN_PLAN.md`: `Yes|No`
 - Existing target `PR_TOUGH.md`: `Yes|No`
 
@@ -128,13 +128,13 @@ Outputs must include:
 Copy the selected stack into:
 
 ```text
-<target-repo>/.bAsIc/taxonomy/<stack-id>/
+<target-repo>/.design/taxonomy/<stack-id>/
 ```
 
 Copy referenced general experts into:
 
 ```text
-<target-repo>/.bAsIc/experts/
+<target-repo>/.design/experts/
 ```
 
 Rules:
@@ -142,8 +142,8 @@ Rules:
 - Preserve directory structure.
 - Do not copy unrelated stacks.
 - Do not overwrite target-local edits without reading the existing file and reporting the difference.
-- If target `.bAsIc/` does not exist, create it.
-- Add or update a minimal `.bAsIc/manifest.json` if the target repo already uses one or the caller asks for one.
+- If target `.design/` does not exist, create it.
+- Add or update a minimal `.design/manifest.json` if the target repo already uses one or the caller asks for one.
 
 ### Step 7 - Create Target RUN_PLAN.md
 
@@ -222,8 +222,8 @@ Return a concise bootstrap report:
 
 ## Installed Files
 
-- `.bAsIc/taxonomy/<stack-id>/...`
-- `.bAsIc/experts/...`
+- `.design/taxonomy/<stack-id>/...`
+- `.design/experts/...`
 - `RUN_PLAN.md`
 - `PR_TOUGH.md`
 

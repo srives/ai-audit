@@ -2,31 +2,30 @@
 
 ## Purpose
 
-Canonical **testing governance**, mastered in the EngineerForge repo (`C:\repos\Fork`) and
-**designed to be shared across every repo in the product family** (EngineerForge, bAsIc,
-reMarkableAi/InkWell, …) — the same sharing model as `RECIPE_RULES.md`. It governs what a valid
-test *is*, which changes require which tests, and how a test is judged — so a codebase is
-defended against the failure modes that ship past both the AI writer **and** the AI reviewer.
+Canonical testing governance, designed to be shared across repos — the same sharing model as
+`RECIPE_RULES.md`. It governs what a valid test *is*, which changes require which tests, and
+how a test is judged — so a codebase is defended against the failure modes that ship past both
+the AI writer **and** the AI reviewer.
 
-The evidence base spans two repos: this repo's whole-codebase adversarial review
-(`FABLE-5-REVIEW.md` — ~90 findings, 8 CRITICAL data-loss bugs, all written AND reviewed by
-frontier models), and reMarkableAi's independent seam-bug audit
-(`C:\repos\reMarkableAi\the-common-errors.md`, 2026-07-06 — 8 seam findings that survived
-red-first authorship and 2–3 adversarial review rounds each). Same lesson twice, different
-codebases, different languages: **the bugs that ship are the ones no test tried to cause.**
+The evidence base spans two codebases: a whole-codebase adversarial review
+(~90 findings, 8 CRITICAL data-loss bugs, all written AND reviewed by frontier models), and an
+independent seam-bug audit of a second, unrelated codebase
+(2026-07-06 — 8 seam findings that survived red-first authorship and 2–3 adversarial review
+rounds each). Same lesson twice, different codebases, different languages: **the bugs that
+ship are the ones no test tried to cause.**
 
 In each adopting repo this file is a first-class peer of the other governance documents:
 - `PLAN_RULES.md` — how plans are written.
 - `RUN_PLAN.md` — how plans are executed.
 - `PR_TOUGH.md` — how work is reviewed.
-- `RECIPE_RULES.md` — how the orchestration enforces the above (always engine-canonical in Fork).
+- `RECIPE_RULES.md` — how the orchestration enforces the above (always engine-canonical in the mastering repo).
 - **`TEST_RULES.md` — how the work is tested.**
 
 Where a testing question arises, this file is canonical. It sits below the adopting repo's
 `AGENTS.md`, `PR_TOUGH.md`, and production code and never overrides them. The teach / onboarding
 layer — mental model, director's phrase-book, practice loop — lives in
-`FABLE5-TESTING-SUGGESTIONS.md` (this repo); the enforceable rules live here. Edit the rules
-here, not there.
+`FABLE5-TESTING-SUGGESTIONS.md` (the mastering repo); the enforceable rules live here. Edit the
+rules here, not there.
 
 **Founding principle:** a test proves the code **survives**, not merely that it **works**. The bugs that ship are the ones no test tried to cause.
 
@@ -62,17 +61,17 @@ Fault primitives are shared infrastructure, not per-test one-offs. **The rule is
 primitive list is per-repo** — each adopting repo names the primitives for ITS actual seams, in
 its own testing home, and new seam tests extend that toolkit rather than fork it.
 
-- *EngineerForge (this repo, PowerShell):* a fake child that floods stderr / hangs; a two-writer
-  lease fixture; an abandoned-mutex fixture; a torn-tail journal fixture; a reused-PID fixture;
-  a paginated-grid key-sequence; an offline-dependency toggle; an injectable atomic-write
-  failure — homed in a shared `testing/faults/` toolkit.
-- *reMarkableAi (C#), as the model for other adopters:* a fake child process that never drains
+- *Example (a PowerShell orchestration repo):* a fake child that floods stderr / hangs; a
+  two-writer lease fixture; an abandoned-mutex fixture; a torn-tail journal fixture; a
+  reused-PID fixture; a paginated-grid key-sequence; an offline-dependency toggle; an
+  injectable atomic-write failure — homed in a shared `testing/faults/` toolkit.
+- *Example (a C# repo), as the model for other adopters:* a fake child process that never drains
   stdin / exits before reading; a two-writer race fixture (custody file, catalog row,
   content-address); a torn/truncated-file fixture; a stale-generation replay; an
-  offline-dependency toggle; an injectable atomic-write/flush failure — homed in
-  `InkBridge.TestKit` beside its `Doubles/` and `Contracts/`.
+  offline-dependency toggle; an injectable atomic-write/flush failure — homed in a dedicated
+  TestKit project beside its `Doubles/` and `Contracts/`.
 
-*(Testing governance is extensible — new canonical rules land here as T6, T7, …. Keep each rule enforceable and checkable: a rule that cannot be checked is a wish, not a rule — `PROF.md`.)*
+*(Testing governance is extensible — new canonical rules land here as T6, T7, …. Keep each rule enforceable and checkable: a rule that cannot be checked is a wish, not a rule — `PERSONA.md`.)*
 
 ---
 
@@ -119,7 +118,7 @@ The rules are inert until the adopting repo's OWN governance points at them; wor
   session and worker discovers it.
 - **`PLAN_RULES.md`** — each seam slice *declares* its failure-to-survive in its slice text →
   feeds **T1**. **`RUN_PLAN.md`** — red-first as the definition of done (T1/T2).
-- **`RECIPE_RULES.md`** (engine-canonical, Fork) — the recipe's review gate consumes PR_TOUGH's
+- **`RECIPE_RULES.md`** (engine-canonical) — the recipe's review gate consumes PR_TOUGH's
   verdict, which carries T3/T4 once the pointer above exists.
 
 ---
@@ -128,8 +127,8 @@ The rules are inert until the adopting repo's OWN governance points at them; wor
 
 Mastered here; two adoption modes, mirroring `RECIPE_RULES.md`:
 
-1. **Reference by absolute path** (`C:\repos\Fork\TEST_RULES.md`) — zero drift, right for tools
-   and recipes that take a path input.
+1. **Reference by absolute path** (the mastering repo's `TEST_RULES.md`) — zero drift, right
+   for tools and recipes that take a path input.
 2. **Adapted copy at the adopting repo's root** — right when the repo's workers read root
    governance files (the common case). An adapted copy MUST change exactly four things and
    nothing else:
@@ -138,11 +137,11 @@ Mastered here; two adoption modes, mirroring `RECIPE_RULES.md`:
    - **The T5 primitive list**, rewritten for that repo's actual seams and testing home.
    - **The wiring pointers**, added to that repo's `PR_TOUGH.md` + `CLAUDE.md`/`AGENTS.md`.
    - **No dangling references** — anything not present in the adopting repo is repointed to its
-     canonical Fork absolute path or pruned.
+     canonical path in the mastering repo or pruned.
    T1–T4, the Fault Catalog, the seam-touching definition, and the Test-Quality Bar are the
    invariant core: if an adaptation changes those, it is a fork, not an adoption — bring the
    change here first (they land as T6, T7, … for every repo at once).
 
-**Adoption record:** reMarkableAi/InkWell — adapted copy, 2026-07-06, wired via its
+**Adoption record:** first adopting repo — adapted copy, 2026-07-06, wired via its
 `PR_TOUGH.md` Category 6 and `CLAUDE.md` governance list; binding forward-only from adoption,
 never retroactive against already-landed slices (the precedent adaptations should follow).

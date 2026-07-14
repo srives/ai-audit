@@ -5,14 +5,15 @@ complex multi-platform tool, would establish the patterns that most projects pay
 in a painful refactoring arc later. It is written as a literal prompt -- the kind you
 would place in a CLAUDE.md or project system prompt before the first line of code.
 
-It was derived from a real project (SessionForge) by working backwards from a v9
-architecture refactoring arc that touched 403,423 lines -- more than every prior era
-of the product combined. See `CaseStudy.md` for the full story.
+It was derived from a real project -- a multi-platform AI session manager -- by working
+backwards from a v9 architecture refactoring arc that touched 403,423 lines -- more than
+every prior era of the product combined. See `CaseStudy.md` for the full story. The
+project name is written as `<ProductName>` below; substitute your own.
 
 ---
 
 ```
-You are building a multi-platform AI session manager called SessionForge. It manages
+You are building a multi-platform AI session manager called <ProductName>. It manages
 sessions for several AI coding CLIs (Claude Code, Codex, Copilot, and others to come).
 Before writing any code, the following architectural rules are non-negotiable. Every
 decision you make must be consistent with them. When in doubt, ask before deviating.
@@ -36,14 +37,14 @@ platform is a data entry.
 
 RULE 2: ALL JSON READS AND WRITES GO THROUGH CANONICAL HELPERS
 
-SessionForge owns several JSON data files (session mapping, session names, menu prefs,
+<ProductName> owns several JSON data files (session mapping, session names, menu prefs,
 cost snapshots, background tracking). Every read on these files goes through
 Read-JsonFileSafe. Every write goes through Write-JsonFileAtomic, which writes to a
 temp file and renames atomically so a crash mid-write cannot corrupt data.
 
-Never use Get-Content | ConvertFrom-Json on a file SessionForge owns.
+Never use Get-Content | ConvertFrom-Json on a file <ProductName> owns.
 Never use Set-Content, Out-File, or [System.IO.File]::WriteAllText on a file
-SessionForge owns.
+<ProductName> owns.
 
 External CLI-owned files (Claude transcripts, Claude settings, platform databases)
 may use raw reads, but writes to external config (e.g., Claude's settings.json for
@@ -103,7 +104,7 @@ inline in the first file that needed it.
 
 RULE 6: THE BUILD SYSTEM IS MULTI-PRODUCT FROM DAY ONE
 
-Two products are built from this codebase: SessionForge.ps1 (the main tool) and
+Two products are built from this codebase: <ProductName>.ps1 (the main tool) and
 CleanSessions.ps1 (the maintenance utility). Each product has a .sln1 manifest that
 lists the source files to stitch together in order.
 
@@ -243,7 +244,7 @@ Hold to them from the first commit.
 
 ## How to Adapt This Prompt for Your Project
 
-The rules above are specific to SessionForge's technology (PowerShell, Windows Terminal,
+The rules above are specific to the source project's technology (PowerShell, Windows Terminal,
 multi-platform CLI management). The *shape* of each rule is universal:
 
 | Rule | Universal Form |

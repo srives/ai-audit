@@ -2,9 +2,9 @@
 
 ## Purpose
 
-You are the taxonomy author for bAsIc.
+You are the taxonomy author for the design system.
 
-Your job is to create a proposed new AI-BASIC stack taxonomy when `TheSortingHat.md` cannot find a strong installed-stack fit. This is compiler-building work: you are not merely naming a project; you are designing a durable professional taxonomy that can ship with the compiler catalog.
+Your job is to create a proposed new stack taxonomy when `TheSortingHat.md` cannot find a strong installed-stack fit. This is catalog-building work: you are not merely naming a project; you are designing a durable professional taxonomy that can ship with the installed catalog.
 
 Use this prompt when:
 
@@ -25,13 +25,13 @@ The caller should provide:
 
 ## Repository Boundary Rule
 
-This prompt may run from an AI-BASIC control repo while designing a taxonomy for a different target repo.
+This prompt may run from a control repo (the repo holding the installed catalog) while designing a taxonomy for a different target repo.
 
 - If no target repo is provided, use only the current repository or selected files.
 - If the caller explicitly provides a target repo path, inspect that target repo even when it is outside the current working directory.
 - The control repo owns installed catalog data and is the default destination for proposed taxonomy files.
 - The target repo supplies evidence about what stack is needed.
-- Do not write into the target repo unless the caller explicitly asks for a project-local `.bAsIc/` install or update.
+- Do not write into the target repo unless the caller explicitly asks for a project-local `.design/` install or update.
 - In the output, state the control repo/catalog destination and the target repo or file bundle analyzed.
 
 ## Internet Research Requirement
@@ -51,7 +51,7 @@ Do not pad the taxonomy with fashionable words. The point is durable professiona
 
 ## Current Numbering System
 
-AI-BASIC stack ids use four digits: `CSFL`.
+Stack ids use four digits: `CSFL`.
 
 ```text
 C S F L
@@ -73,7 +73,7 @@ Current category bands:
 - `6xxx`-`8xxx` Reserved.
 - `9xxx` Custom & Experimental.
 
-Use `xxx0` for the primary definition of a slot. Use `9xxx` for private or experimental taxonomies unless the taxonomy is clearly ready for the public compiler catalog.
+Use `xxx0` for the primary definition of a slot. Use `9xxx` for private or experimental taxonomies unless the taxonomy is clearly ready for the public catalog.
 
 ## Required Repository Shape
 
@@ -81,12 +81,12 @@ The proposed taxonomy MUST follow the **installed standard, modeled on `5300-lan
 
 ```text
 catalogs/taxonomy/<stack-id>/
-  Expert.md                 # stack coordinator expert — kind: ai-basic-stack-expert
-  stack.md                  # stack definition + layer index — kind: ai-basic-stack
+  Expert.md                 # stack coordinator expert — kind: stack-expert
+  stack.md                  # stack definition + layer index — kind: stack
   sources.md                # durable research ledger
   10-layer-name/
-    Expert.md               # the layer expert (the payload) — kind: ai-basic-expert
-    layer.md                # layer definition + implementer/reviewer assignment — kind: ai-basic-stack-layer
+    Expert.md               # the layer expert (the payload) — kind: expert
+    layer.md                # layer definition + implementer/reviewer assignment — kind: stack-layer
     README.md               # short index of the layer's experts
   20-next-layer/
     Expert.md
@@ -98,10 +98,10 @@ Three files at the stack root (`Expert.md`, `stack.md`, `sources.md`); three fil
 
 File roles and frontmatter (match `5300` exactly):
 
-- **`Expert.md` (coordinator, root)** — `kind: ai-basic-stack-expert`; frontmatter `id`/`name`/`family`/`default_role`/`stack_id`/`layers:`/`sources:`. Body: Mission · Stack Layer Map (table) · Operating Doctrine · Research-Backed Operating Standard · Escalation Rules · Review Checklist. It routes work to layers; it never replaces them.
-- **`stack.md` (root)** — `kind: ai-basic-stack`; frontmatter `id`/`catalog_number`/`domain`/`name`/`version`/`layout`/`layer_order_step`/`source_catalog`/`aliases`/`layers:` (each `{order,id,name,folder,default_worker}`). Body: why the stack exists · Layer Index table · Cross-Cutting Concerns · Research Basis · Sorting Hat Result · Usage.
-- **`Expert.md` (layer)** — `kind: ai-basic-expert`; frontmatter `id`/`name`/`family`/`default_role`/`stack_id`/`layer_id`/`layer_order`/`tags`/`uses_general_experts`/`sources:`. Body: Mission · Responsibilities · Inputs · Outputs · Evidence Base · Collaboration · Research-Backed Additions · Implementation Craft and Known Traps · Conditional Implementation Notes (language-specific) · Review Checklist. **This is the substantial file** — the one that exposes what the AI would otherwise forget.
-- **`layer.md` (layer)** — `kind: ai-basic-stack-layer`; frontmatter `stack_id`/`stack_catalog_number`/`id`/`name`/`order`/`source_order`/`default_worker`/`implementers`/`reviewers`. Body: Responsibility · Expert Specialization · Expert Collection.
+- **`Expert.md` (coordinator, root)** — `kind: stack-expert`; frontmatter `id`/`name`/`family`/`default_role`/`stack_id`/`layers:`/`sources:`. Body: Mission · Stack Layer Map (table) · Operating Doctrine · Research-Backed Operating Standard · Escalation Rules · Review Checklist. It routes work to layers; it never replaces them.
+- **`stack.md` (root)** — `kind: stack`; frontmatter `id`/`catalog_number`/`domain`/`name`/`version`/`layout`/`layer_order_step`/`source_catalog`/`aliases`/`layers:` (each `{order,id,name,folder,default_worker}`). Body: why the stack exists · Layer Index table · Cross-Cutting Concerns · Research Basis · Sorting Hat Result · Usage.
+- **`Expert.md` (layer)** — `kind: expert`; frontmatter `id`/`name`/`family`/`default_role`/`stack_id`/`layer_id`/`layer_order`/`tags`/`uses_general_experts`/`sources:`. Body: Mission · Responsibilities · Inputs · Outputs · Evidence Base · Collaboration · Research-Backed Additions · Implementation Craft and Known Traps · Conditional Implementation Notes (language-specific) · Review Checklist. **This is the substantial file** — the one that exposes what the AI would otherwise forget.
+- **`layer.md` (layer)** — `kind: stack-layer`; frontmatter `stack_id`/`stack_catalog_number`/`id`/`name`/`order`/`source_order`/`default_worker`/`implementers`/`reviewers`. Body: Responsibility · Expert Specialization · Expert Collection.
 - **`README.md` (layer)** — a short human index of the layer's experts and the general experts it draws on.
 
 Every new taxonomy MUST include `sources.md` at the root of its taxonomy directory. `sources.md` is the durable research ledger for the stack. It records the sources consulted, why they matter, how they shaped the layer design, source confidence, and any known limits or future research needs. This keeps research provenance with the taxonomy instead of burying it in chat history.
@@ -114,22 +114,22 @@ Every new taxonomy MUST include `sources.md` at the root of its taxonomy directo
 4. A layer should not be a temporary project task.
 5. A new stack should not duplicate an existing stack with new branding.
 6. The stack must support expert assignment.
-7. The stack must support slicing work during `DESIGN`.
+7. The stack must support slicing work during the design step.
 8. A taxonomy should expose what AI would otherwise forget.
 9. If a general expert is reusable across stacks, place it under `catalogs/experts/`, not under one layer.
-10. Adding a stack is a data update, not a language grammar change.
+10. Adding a stack is a data update, not a change to the design system itself.
 
-## AI-BASIC Repository Example
+## Worked Example: A Compiler/Language Repository
 
-If analyzing this AI-BASIC compiler repository, look for these signals:
+If analyzing a compiler/language implementation repository, look for these signals:
 
-- `.fs` compiler source.
+- Compiler source files (for example `.fs`).
 - Lexer, parser, AST, validator, emitter pipeline.
 - Formal language specification.
 - Annex grammar.
-- BASIC compatibility.
+- Legacy-language compatibility requirements.
 - Structured document emission.
-- EngineerForge recipe output.
+- Orchestration-engine recipe output.
 - AI orchestration primitives.
 - Governance documents and experts.
 
@@ -240,11 +240,12 @@ catalogs/taxonomy/<stack-id>/20-next-layer/README.md
 ...
 ```
 
-## Example AI-BASIC Use
+## Example Use
 
-```basic
-LET stack = READ "<stack-id>" AS STACK
-DESIGN plan FROM wish USING planners AS stack WITH STRICT planRules FOR 6 ROUNDS /ASK
+```text
+load "<stack-id>" as the working stack
+run the design step: produce the plan from the wish, using the stack's
+experts, with strict plan rules, for multiple rounds, in ask mode
 ```
 
 ## Open Questions

@@ -2,13 +2,13 @@
 
 ## What this is
 
-This is the **template for writing a generation prompt** — the file you hand an AI executor when you want it to *produce* work (a plan, a slice implementation, a document, an AIR recipe), not review it. Given a **WISH** (an intent stated as a desired outcome), the output is **one self-contained prompt** that wraps the intent in enough context, constraint, and a falsifiable definition of done that the result comes back clean and *checkable* — with no other context needed.
+This is the **template for writing a generation prompt** — the file you hand an AI executor when you want it to *produce* work (a plan, a slice implementation, a document, a workflow recipe), not review it. Given a **WISH** (an intent stated as a desired outcome), the output is **one self-contained prompt** that wraps the intent in enough context, constraint, and a falsifiable definition of done that the result comes back clean and *checkable* — with no other context needed.
 
 It exists for the same reason as its review-phase sibling `PR_TO_PROMPT.md`: **prompting rigor measurably improves results.** A WISH handed over as raw intent ("build the lexer") yields thrash; the same WISH wrapped in the real artifacts to ground in, the operating contract, the boundary of what *not* to do, and falsifiable acceptance criteria yields scoped, verifiable work. *Raise the floor with the prompt; catch the rest with the review loop.*
 
 This is the **intent/generation-phase** member of the prompt-template family. `PR_TO_PROMPT.md` is the review-phase member. Both embed the same **Operating Contract core**. The crucial link between them: **the acceptance criteria written here are the same criteria the review judges against later.** Write them once, in outcome terms, and the prompt that *makes* the work and the review that *grades* it cannot drift apart.
 
-> This template is the prose form of what a `SLICE` encodes structurally (source, layer, expert, evidence route, dependencies, objective, work, acceptance, verification, consumer sweep). We are getting the *ideas* into usable shape here; where they finally live in bAsIc — engine profile, governed artifact, or source surface — is a later decision.
+> This template is the prose form of what a slice encodes structurally (source, layer, expert, evidence route, dependencies, objective, work, acceptance, verification, consumer sweep). We are getting the *ideas* into usable shape here; where they finally live — engine profile, governed artifact, or source surface — is a later decision.
 
 ## A generation prompt has these parts, always
 
@@ -24,7 +24,7 @@ A WISH without (B) and (C) is a coin flip. (B) and (C) without a real WISH have 
 ## Procedure to produce a generation prompt
 
 1. **Pin the WISH to an outcome.** Interrogate the intent until it states *what becomes true*, not *what to build*. "The binary rejects every invalid CLI form with a stable diagnostic" — not "write an arg parser." If you cannot phrase it as a checkable outcome, the prompt is not ready.
-2. **Find what to ground in.** The strongest single lever. Name the real artifacts the work must be *transcribed from* rather than invented — the running engine (EngineerForge), an existing golden, the exact spec clause, the source file and line. "Ground in the codebase" is not grounding; name the files.
+2. **Find what to ground in.** The strongest single lever. Name the real artifacts the work must be *transcribed from* rather than invented — the running system, an existing golden, the exact spec clause, the source file and line. "Ground in the codebase" is not grounding; name the files.
 3. **Route to the stack and expert(s).** Name the layer expert(s) and the stack coordinator. A WISH that crosses layers names *every* expert it spans — under-routing a cross-cutting task to one expert defeats the routing.
 4. **Write falsifiable, discriminating acceptance — the hinge.** Each criterion must be decidable by a test, a diff inspection, a spec clause, or the engine, *and* able to produce a NO against a wrong result. Write them exactly as the later `PR_TOUGH` review will judge them, so the making prompt and the judging review cannot drift. Define "complete" by the real call/route graph, never by output size.
 5. **Draw the boundary.** State what is out of scope, what is later-track (inventory / stub / defer — do not build), and what is forbidden (shims, dual paths, scope creep). Overreach is the generative agent's most common failure; naming the edge is cheaper than reviewing it out.
@@ -48,13 +48,13 @@ with stable diagnostics," not "write an argument parser.">
 <What a good result looks like, beyond "it runs." The quality bar the WISH is reaching for.>
 
 ## Context to re-read first (ground the work in real artifacts)
-<The canonical governance set — AGENTS.md, PROF.md, RUN_PLAN.md, PLAN_RULES.md, PR_TOUGH.md —
+<The canonical governance set — AGENTS.md, PERSONA.md, RUN_PLAN.md, PLAN_RULES.md, PR_TOUGH.md —
 plus the SPECIFIC specs/ sections, source files, plan/slice, and any real running artifact
-(EngineerForge behavior, an existing golden) this work must be transcribed from rather than
+(running-system behavior, an existing golden) this work must be transcribed from rather than
 invented. Name them; do not say "the relevant files.">
 
 ## Stack / expertise
-<Which layer and expert(s) this needs (e.g. catalogs/taxonomy/5300-language-compiler/<layer>/
+<Which layer and expert(s) this needs (e.g. catalogs/taxonomy/<stack>/<layer>/
 Expert.md), plus the stack coordinator. A task that crosses layers names every expert it spans.>
 
 ## Operating Contract
@@ -99,17 +99,17 @@ You are addressing this handoff. Work under these rules (re-read them; do not wo
 - Re-read, don't recall. At start, after any interruption, and roughly every 30 minutes,
   re-read: this file, the slice/plan/spec it relates to, the artifacts you will touch
   (fresh from disk — the tree changes under you), and the canonical governance set:
-  AGENTS.md, PROF.md, RUN_PLAN.md, PLAN_RULES.md, PR_TOUGH.md, and the relevant specs/ files.
+  AGENTS.md, PERSONA.md, RUN_PLAN.md, PLAN_RULES.md, PR_TOUGH.md, and the relevant specs/ files.
 - No unverified claim becomes a result. Ground every assertion in the real artifact — the
-  file, the test output, the running engine (EngineerForge), the spec section. "It should
+  file, the test output, the running system, the spec section. "It should
   work" is not evidence; cite file:line, a named test result, or a spec clause. This rule is
   load-bearing; the rest serve it.
-- No target invention. Emit no external-contract shape — a Flow field, adapter, route key,
+- No target invention. Emit no external-contract shape — a workflow-format field, adapter, route key,
   schema key, or CLI form — unless it is verified from the prototype, protocol, a current
   passing golden, or the spec. Otherwise mark it deferred or name it an open decision; never
   guess a shape into existence.
 - Decide and record; escalate only true gates. For an ordinary decision, make it on
-  PROF.md / PR_TOUGH.md judgment, write one line in the Decisions footer, and continue — do
+  PERSONA.md / PR_TOUGH.md judgment, write one line in the Decisions footer, and continue — do
   not stop for routine input. Escalate to the human only for genuine governance gates: a
   spec/contract change (RFC), promotion of a later-track surface, or any destructive or
   outward-facing action. Never halt on a routine choice; never self-authorize a gate.

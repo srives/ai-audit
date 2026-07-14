@@ -1,160 +1,85 @@
-Create compiler-plan-recipe-final.md from compiler-plan-final.md.
-
-
-
-&#x20; Work in C:\\repos\\AI-BASIC.
-
-
-
-&#x20; Read these files first, in this order:
-
-&#x20; 1. AGENTS.md
-
-&#x20; 2. PLAN\_RULES.md
-
-&#x20; 3. C:\\repos\\Fork\\RECIPE\_RULES.md
-
-&#x20; 4. RUN\_PLAN.md
-
-&#x20; 5. PROF.md
-
-&#x20; 6. specs\\AI-BASIC-SPECS.md
-
-&#x20; 7. specs\\BASICAI\_CLI.md
-
-&#x20; 8. specs\\AI-BASIC-ENGINE.md
-
-&#x20; 9. compiler-plan-final.md
-
-
-
-&#x20; Do not use slices-recipe-final.md. It has been deleted because compiler-plan-final.md is now the active master plan.
-
-
-
-&#x20; Goal:
-
-&#x20; Turn compiler-plan-final.md into a recipe-ready, deletion-friendly implementation queue named compiler-plan-recipe-final.md.
-
-
-
-&#x20; Requirements:
-
-&#x20; - Do not edit compiler source code.
-
-&#x20; - Do not edit compiler-plan-final.md unless absolutely necessary; the output is the new recipe file.
-
-&#x20; - Do not commit.
-
-&#x20; - Preserve the AIR-first milestone boundary.
-
-&#x20; - Keep LLM and ANN/WordNet as later-version tracks, not active implementation slices.
-
-&#x20; - Make the recipe executable under PLAN\_RULES.md and C:\\repos\\Fork\\RECIPE\_RULES.md.
-
-&#x20; - Use strict file order as execution order.
-
-&#x20; - Each implementation unit must be deletable as a whole when complete.
-
-&#x20; - Number active recipe slices sequentially starting from 1.
-
-&#x20; - Do not make broad vague phases. If a compiler-plan-final.md slice is too large, split it into smaller recipe slices.
-
-&#x20; - Each slice must name:
-
-&#x20;   - Source slice from compiler-plan-final.md
-
-&#x20;   - Product class: RECIPE\_COMPILER, RUNTIME\_ORACLE, ENGINE\_PORT, or FUTURE\_SURFACE
-
-&#x20;   - Layer
-
-&#x20;   - Expert path from catalogs\\taxonomy\\5300-language-compiler\\...
-
-&#x20;   - Evidence route: SELF, WORLD, HUMAN, or DEFERRED
-
-&#x20;   - Depends on
-
-&#x20;   - Objective
-
-&#x20;   - Work
-
-&#x20;   - Acceptance
-
-&#x20;   - Verification
-
-&#x20;   - Consumer sweep / search terms where the slice changes a contract
-
-
-
-&#x20; Expert routing:
-
-&#x20; Use the 5300 language-compiler taxonomy. For example:
-
-&#x20; - language spec work -> catalogs/taxonomy/5300-language-compiler/10-language-specification/Expert.md
-
-&#x20; - lexer work -> catalogs/taxonomy/5300-language-compiler/20-lexical-analysis/Expert.md
-
-&#x20; - parser/AST work -> catalogs/taxonomy/5300-language-compiler/30-parsing-and-syntax-trees/Expert.md
-
-&#x20; - binder work -> catalogs/taxonomy/5300-language-compiler/40-binding-and-symbol-analysis/Expert.md
-
-&#x20; - type/static semantics -> catalogs/taxonomy/5300-language-compiler/50-type-system-and-static-semantics/Expert.md
-
-&#x20; - IR/lowering -> catalogs/taxonomy/5300-language-compiler/60-ir-and-lowering/Expert.md
-
-&#x20; - emitters -> catalogs/taxonomy/5300-language-compiler/70-target-backends-and-emitters/Expert.md
-
-&#x20; - diagnostics -> catalogs/taxonomy/5300-language-compiler/80-diagnostics-and-error-recovery/Expert.md
-
-&#x20; - conformance/testing -> catalogs/taxonomy/5300-language-compiler/90-conformance-and-property-testing/Expert.md
-
-&#x20; - CLI/AOT -> catalogs/taxonomy/5300-language-compiler/100-cli-packaging-and-aot/Expert.md
-
-&#x20; - governance/orchestration -> catalogs/taxonomy/5300-language-compiler/110-governance-and-ai-orchestration/Expert.md
-
-&#x20; - compatibility/evolution -> catalogs/taxonomy/5300-language-compiler/120-language-evolution-and-compatibility/Expert.md
-
-
-
-&#x20; Walking spines:
-
-&#x20; Preserve vertical walking spines from compiler-plan-final.md. They should appear as early as dependencies permit, before broad horizontal buildout. A spine that crosses layers must list every relevant
-
-&#x20; expert.
-
-
-
-&#x20; Validation:
-
-&#x20; After writing compiler-plan-recipe-final.md:
-
-&#x20; - run git diff --check -- compiler-plan-recipe-final.md
-
-&#x20; - run .\\doc-lint.ps1 if the new file is covered by doc lint; if not, say so
-
-&#x20; - run targeted searches proving:
-
-&#x20;   - no active LLM/ANN/WordNet implementation slices are in the active queue
-
-&#x20;   - Plan.MODE$ uses the current spec values
-
-&#x20;   - Slice.EVIDENCE$ uses SELF/WORLD/HUMAN/DEFERRED
-
-&#x20;   - Slice.LIVE\_PROOF\_REQUIRED is not resurrected
-
-&#x20;   - old slices-recipe-final.md is not referenced as authority
-
-
-
-&#x20; Final report:
-
-&#x20; - State the file created.
-
-&#x20; - Summarize how compiler-plan-final.md was transformed.
-
-&#x20; - List any content intentionally deferred.
-
-&#x20; - List validation commands run and results.
-
-
-
+Create `<plan>-recipe-final.md` from `<plan>-final.md`.
+
+Work in `<target repo>`.
+
+Read these files first, in this order:
+
+1. `AGENTS.md`
+2. `PLAN_RULES.md`
+3. The orchestration engine's `RECIPE_RULES.md`
+4. `RUN_PLAN.md`
+5. `<the project's governing expert/persona document>`
+6. `<the project's primary spec files>`
+7. `<plan>-final.md`
+
+Do not use `<superseded recipe file>`. It has been deleted because `<plan>-final.md` is now the active master plan.
+
+Goal:
+
+Turn `<plan>-final.md` into a recipe-ready, deletion-friendly implementation queue named `<plan>-recipe-final.md`.
+
+Requirements:
+
+- Do not edit source code.
+- Do not edit `<plan>-final.md` unless absolutely necessary; the output is the new recipe file.
+- Do not commit.
+- Preserve the plan's first-milestone boundary.
+- Keep deferred tracks (for example experimental or later-version capabilities) as later-version tracks, not active implementation slices.
+- Make the recipe executable under `PLAN_RULES.md` and the orchestration engine's `RECIPE_RULES.md`.
+- Use strict file order as execution order.
+- Each implementation unit must be deletable as a whole when complete.
+- Number active recipe slices sequentially starting from 1.
+- Do not make broad vague phases. If a `<plan>-final.md` slice is too large, split it into smaller recipe slices.
+- Each slice must name:
+  - Source slice from `<plan>-final.md`
+  - Product class: `<one of the plan's declared product classes>`
+  - Layer
+  - Expert path from `catalogs/taxonomy/<stack-id>/...`
+  - Evidence route: SELF, WORLD, HUMAN, or DEFERRED
+  - Depends on
+  - Objective
+  - Work
+  - Acceptance
+  - Verification
+  - Consumer sweep / search terms where the slice changes a contract
+
+Expert routing:
+
+Use the installed stack taxonomy. For example, with a language-compiler stack:
+
+- language spec work -> `catalogs/taxonomy/<stack-id>/10-language-specification/Expert.md`
+- lexer work -> `catalogs/taxonomy/<stack-id>/20-lexical-analysis/Expert.md`
+- parser/AST work -> `catalogs/taxonomy/<stack-id>/30-parsing-and-syntax-trees/Expert.md`
+- binder work -> `catalogs/taxonomy/<stack-id>/40-binding-and-symbol-analysis/Expert.md`
+- type/static semantics -> `catalogs/taxonomy/<stack-id>/50-type-system-and-static-semantics/Expert.md`
+- IR/lowering -> `catalogs/taxonomy/<stack-id>/60-ir-and-lowering/Expert.md`
+- emitters -> `catalogs/taxonomy/<stack-id>/70-target-backends-and-emitters/Expert.md`
+- diagnostics -> `catalogs/taxonomy/<stack-id>/80-diagnostics-and-error-recovery/Expert.md`
+- conformance/testing -> `catalogs/taxonomy/<stack-id>/90-conformance-and-property-testing/Expert.md`
+- CLI/AOT -> `catalogs/taxonomy/<stack-id>/100-cli-packaging-and-aot/Expert.md`
+- governance/orchestration -> `catalogs/taxonomy/<stack-id>/110-governance-and-ai-orchestration/Expert.md`
+- compatibility/evolution -> `catalogs/taxonomy/<stack-id>/120-language-evolution-and-compatibility/Expert.md`
+
+Walking spines:
+
+Preserve vertical walking spines from `<plan>-final.md`. They should appear as early as dependencies permit, before broad horizontal buildout. A spine that crosses layers must list every relevant expert.
+
+Validation:
+
+After writing `<plan>-recipe-final.md`:
+
+- run `git diff --check -- <plan>-recipe-final.md`
+- run the repo's doc lint if the new file is covered by it; if not, say so
+- run targeted searches proving:
+  - no deferred-track implementation slices are in the active queue
+  - the plan's mode field uses the current spec values
+  - each slice's evidence route uses SELF/WORLD/HUMAN/DEFERRED
+  - deprecated slice fields are not resurrected
+  - the superseded recipe file is not referenced as authority
+
+Final report:
+
+- State the file created.
+- Summarize how `<plan>-final.md` was transformed.
+- List any content intentionally deferred.
+- List validation commands run and results.

@@ -1,14 +1,14 @@
-# PROF.md
+# PERSONA.md — Engineering Persona
 
-> **Synthesis:** final professor governance from `LANGUAGE_DEVELOPMENT-codex3.md` and `LANGUAGE_DEVELOPMENT-claude3.md`.
+> **Scope:** Generic engineering-persona governance, suitable for adoption by any repository. It is written with compiler/pipeline projects as the worked example; apply the same discipline to any project.
 >
-> **Purpose:** Define the highest-standard engineering rules for implementing AI-BASIC as an industrial-strength F# compiler/interpreter system that can emit structured documents and Flow v1 recipes accepted by the Fork/EngineerForge orchestration engine.
+> **Purpose:** Define the highest-standard engineering rules for implementing an industrial-strength F# compiler/interpreter system that can emit structured documents and workflow recipes accepted by a downstream orchestration engine.
 >
-> **Authority chain:** This file is governance, not law above the project. `AGENTS.md` wins for agent behavior. `specs/AI-BASIC.md` wins for source-language semantics. Fork production code wins for Flow target behavior. When this document conflicts with those sources, update this document.
+> **Authority chain:** This file is governance, not law above the project. `AGENTS.md` wins for agent behavior. `specs/<language-spec>.md` wins for source-language semantics. The downstream engine's production code wins for target workflow behavior. When this document conflicts with those sources, update this document.
 
 ## 1. Mandate
 
-AI-BASIC must be built as a compiler, not a string replacer, not a parser that prints JSON, and not an interpreter that happens to emit recipes.
+The language must be built as a compiler, not a string replacer, not a parser that prints JSON, and not an interpreter that happens to emit recipes.
 
 A compiler is a sequence of typed transformations between formal representations:
 
@@ -21,7 +21,7 @@ A compiler is a sequence of typed transformations between formal representations
 - emitted artifacts,
 - optional execution or native binary packaging.
 
-Because AI-BASIC's first serious backend is Fork/EngineerForge Flow v1, the compiler must also think in state machines. Fork recipes are executable graphs. A Flow-targeted compiler is not "writing JSON"; it is lowering AI-BASIC semantics to a valid, deterministic, inspectable state-machine graph.
+When the first serious backend is a workflow-orchestration engine, the compiler must also think in state machines. Engine recipes are executable graphs. A workflow-targeted compiler is not "writing JSON"; it is lowering source semantics to a valid, deterministic, inspectable state-machine graph.
 
 The standard is:
 
@@ -31,7 +31,7 @@ The standard is:
 - deterministic output,
 - useful diagnostics,
 - property-based correctness checks,
-- live validation against Fork,
+- live validation against the downstream engine,
 - no reliance on revoked documents,
 - no approximation when a target cannot represent the source program truthfully.
 
@@ -39,65 +39,59 @@ Accuracy is the currency. Simplicity is the methodology.
 
 ## 2. Authority Order
 
-### 2.1 AI-BASIC Project Authority
+### 2.1 Project Authority
 
-Within `C:\repos\AI-BASIC`, authority order is:
+Within the project repository, authority order is:
 
 1. `AGENTS.md`
-2. `specs/AI-BASIC.md`
-3. `RUN_PLAN.md`
-4. `PLAN_RULES.md`
-5. `PR_TOUGH.md`
+2. `specs/<language-spec>.md`
+3. the active run plan
+4. the project's plan-authoring rules
+5. the project's review standards
 6. `README.md`
-7. `DESIGNED_WORK/basic-loop-syntax-claude1.md`
+7. approved design documents under the project's design folder
 8. sample programs under `samples/`
 9. this governance document
 
-`AGENTS.md` wins when agent behavior or repo process is in question. `specs/AI-BASIC.md` is the source-language contract. If compiler behavior and the spec disagree, the compiler is wrong unless the spec is first changed through the project's RFC process.
+`AGENTS.md` wins when agent behavior or repo process is in question. `specs/<language-spec>.md` is the source-language contract. If compiler behavior and the spec disagree, the compiler is wrong unless the spec is first changed through the project's RFC process.
 
-### 2.2 Fork / EngineerForge Authority
+### 2.2 Downstream Orchestration Engine Authority
 
-For Flow v1 target behavior, authority order is:
+For target workflow behavior, authority order is:
 
-1. Fork production source code in `C:\repos\Fork\src\`.
-2. `C:\repos\Fork\RECIPE_PROTOCOL.md`.
-3. `C:\repos\Fork\orchestration\RECIPE_AUTHORING_GUIDE.md`.
-4. `C:\repos\Fork\RECIPE_RULES.md`.
+1. The engine's production source code.
+2. The engine's generated protocol document.
+3. The engine's recipe authoring guide.
+4. The engine's recipe rules document.
 5. this governance document.
 
-Valid Fork sources:
+Valid engine sources:
 
-- `C:\repos\Fork\RECIPE_PROTOCOL.md`
-- `C:\repos\Fork\RECIPE_RULES.md`
-- `C:\repos\Fork\orchestration\RECIPE_AUTHORING_GUIDE.md`
-- `C:\repos\Fork\src\entry\recipe.ps1`
-- `C:\repos\Fork\src\integration\orchestration-recipe.ps1`
-- `C:\repos\Fork\src\integration\orchestration-adapters.ps1`
-- `C:\repos\Fork\src\integration\orchestration-actions.ps1`
-- `C:\repos\Fork\src\integration\orchestration-engine.ps1`
-- `C:\repos\Fork\src\integration\orchestration-handlers.ps1`
-- `C:\repos\Fork\src\integration\orchestration-workers.ps1`
-- `C:\repos\Fork\src\recipes\`
-- `C:\repos\Fork\src\testing\orchestration\`
+- the engine's generated protocol document
+- the engine's recipe rules document
+- the engine's recipe authoring guide
+- the engine's public CLI entrypoint
+- the engine's integration/orchestration modules
+- the engine's first-party recipe library
+- the engine's orchestration test suite
 
-The path `C:\repos\Fork\scr\` is not the observed source path. The observed path is `C:\repos\Fork\src\`.
+Cite the engine's observed source paths exactly; do not trust misspelled, guessed, or unverified paths.
 
-If `RECIPE_PROTOCOL.md` disagrees with runtime behavior, do not hand-patch the markdown. Re-read production code, regenerate the protocol if appropriate, and update the compiler contract deliberately.
+If the generated protocol document disagrees with runtime behavior, do not hand-patch the markdown. Re-read production code, regenerate the protocol if appropriate, and update the compiler contract deliberately.
 
 ### 2.3 Revoked Sources
 
 Never use these as authority:
 
-- `C:\repos\Fork\orchestration\SF_RECIPE_PROTOCOL.md`
-- `C:\repos\Fork\orchestration\COMPILER_BUILD_PLAN.md`
-- any other `.md` file under `C:\repos\Fork\orchestration\` except `RECIPE_AUTHORING_GUIDE.md`
-- deleted, stale, or planning-only orchestration documents not revalidated against production Fork code
+- superseded protocol snapshot documents that were explicitly revoked
+- deleted or stale planning documents
+- any other planning-only orchestration documents not revalidated against the engine's production code
 
-If a conclusion came from a revoked source, re-derive it from production Fork code, `RECIPE_PROTOCOL.md`, `RECIPE_AUTHORING_GUIDE.md`, or `RECIPE_RULES.md`.
+If a conclusion came from a revoked source, re-derive it from the engine's production code, its generated protocol document, its authoring guide, or its rules document.
 
 ## 3. Research Basis
 
-Prefer primary sources, university course material, recognized programming-language research, and official F#/.NET documentation over blogs or forum advice. Practical articles may help with ergonomics, but they do not override compiler theory, the AI-BASIC spec, or Fork runtime behavior.
+Prefer primary sources, university course material, recognized programming-language research, and official F#/.NET documentation over blogs or forum advice. Practical articles may help with ergonomics, but they do not override compiler theory, the language spec, or the engine's runtime behavior.
 
 High-signal foundations:
 
@@ -119,26 +113,26 @@ High-signal foundations:
 - Xavier Leroy / CompCert: semantic preservation as the correctness ideal.
 - John Regehr / Csmith: compiler fuzzing and generated edge-case testing.
 - Cerny and Tratt, *Don't Panic! Better, Fewer, Syntax Errors for LR Parsers*: diagnostic quality.
-- Microsoft QuickBASIC, GW-BASIC, BASICA references and PCjs-hosted manuals: historical BASIC behavior where intentionally adopted.
+- Original vendor manuals and archived documentation for any historical language dialect the project intentionally adopts.
 
-No authoritative scholarly source was found for "BASIC compiler in F#." The proper foundation is compiler science plus F# idioms plus BASIC history plus the corrected Fork contract.
+No single authoritative scholarly source covers this exact combination of language, host language, and target. The proper foundation is compiler science plus F# idioms plus the adopted dialect's history plus the corrected engine contract.
 
 ## 4. The Three Contracts
 
-AI-BASIC programs cross three independent contracts.
+Source programs cross three independent contracts.
 
 | Layer | Owns | Authority |
 |---|---|---|
-| Language | syntax, semantics, variables, control flow, type rules, AI primitives, diagnostics | `specs/AI-BASIC.md` |
+| Language | syntax, semantics, variables, control flow, type rules, AI primitives, diagnostics | `specs/<language-spec>.md` |
 | Format | JSON / YAML / XML / TOML serialization | `EMIT` directive and CLI target |
-| Target schema | Flow v1 fields, adapters, routing, substitutions, graph rules | Fork production code and `RECIPE_PROTOCOL.md` |
+| Target schema | workflow schema fields, adapters, routing, substitutions, graph rules | engine production code and the generated protocol document |
 
 Never mix these layers:
 
-- Lexer does not know Flow.
-- Parser does not know Flow adapters.
+- Lexer does not know the workflow schema.
+- Parser does not know engine adapters.
 - Binder resolves source names and control-flow references.
-- Validator checks AI-BASIC legality and target representability.
+- Validator checks source-language legality and target representability.
 - Lowerer maps validated semantics to IR.
 - Schema conformance checks target contracts.
 - Emitter serializes verified IR.
@@ -148,7 +142,7 @@ Never mix these layers:
 The pipeline is strict left-to-right:
 
 ```text
-.bas source
+source text
     |
     v
 [Lexer]
@@ -178,7 +172,7 @@ Validated AST + diagnostics
 [Lowerer]
     |
     v
-Document IR / Flow IR / executable IR
+Document IR / Workflow IR / executable IR
     |
     v
 [Target Conformance Check]
@@ -197,7 +191,7 @@ Rules:
 
 - Each stage consumes only the prior stage's public output.
 - No stage reaches backward into earlier private state.
-- Parser emits AST, not JSON or Flow.
+- Parser emits AST, not JSON or workflow output.
 - Binder resolves names and control-flow references, not target text.
 - Validator proves legality and representability.
 - Lowerer maps source semantics to IR.
@@ -218,10 +212,10 @@ val parse : Token list -> CompileResult<ParsedProgram>
 val bind : ParsedProgram -> CompileResult<BoundProgram>
 val validate : BoundProgram -> CompileResult<ValidatedProgram>
 val lowerToDocument : ValidatedProgram -> CompileResult<DocumentIr>
-val lowerToFlow : ValidatedProgram -> CompileResult<FlowIr>
-val checkFlowConformance : FlowIr -> CompileResult<VerifiedFlowIr>
+val lowerToWorkflow : ValidatedProgram -> CompileResult<WorkflowIr>
+val checkWorkflowConformance : WorkflowIr -> CompileResult<VerifiedWorkflowIr>
 val emitJson : VerifiedDocumentIr -> CompileResult<string>
-val emitFlowJson : VerifiedFlowIr -> CompileResult<string>
+val emitWorkflowJson : VerifiedWorkflowIr -> CompileResult<string>
 ```
 
 The type system should make wrong phase ordering difficult.
@@ -238,7 +232,7 @@ Lexer:
 - exact source span tracking: file, line, column, offset, length,
 - `REM` rest-of-line handling,
 - doubled-quote escape: `""` inside a string literal represents one literal quote character; backslash has no special meaning in string literals,
-- line-boundary preservation for BASIC syntax.
+- line-boundary preservation for line-oriented syntax.
 
 Parser:
 
@@ -261,7 +255,7 @@ Semantic analysis:
 Lowering:
 
 - document tree construction for structured output,
-- Flow state-machine graph construction for Fork targets,
+- workflow state-machine graph construction for engine targets,
 - stable ID generation,
 - artifact closure pass,
 - default-elision pass,
@@ -321,8 +315,8 @@ AST nodes are immutable. Do not mutate parsed nodes to add binding or type data.
 - `BoundProgram`
 - `ValidatedProgram`
 - `DocumentIr`
-- `FlowIr`
-- `VerifiedFlowIr`
+- `WorkflowIr`
+- `VerifiedWorkflowIr`
 
 No global mutable compiler state. Pass contexts explicitly.
 
@@ -414,8 +408,8 @@ Lexer non-responsibilities:
 - resolving `GOTO` targets,
 - deciding whether variables are declared,
 - checking AI primitive legality,
-- reading Fork protocol data,
-- building JSON or Flow,
+- reading engine protocol data,
+- building JSON or workflow output,
 - validating graph structure.
 
 Mandatory lexer tests:
@@ -455,8 +449,8 @@ Parser non-responsibilities:
 
 - binding identifiers,
 - type checking,
-- checking Flow schema,
-- calling Fork,
+- checking the workflow schema,
+- calling the engine,
 - serializing output,
 - executing code,
 - normalizing away source constructs later phases need.
@@ -478,11 +472,11 @@ Keep these representations distinct:
 - Bound AST: names, labels, line targets, artifact references, and control-flow edges resolved.
 - Validated AST: semantics proven legal for the selected target.
 - Document IR: target-neutral structured data model.
-- Flow IR: typed state-machine representation for Fork recipes.
+- Workflow IR: typed state-machine representation for engine recipes.
 - Executable IR: future runtime/native compilation representation.
 - Emitted artifact: serialized JSON/YAML/XML/TOML or native package.
 
-AI-BASIC v1 does not need a full concrete syntax tree unless formatting/editor features require one. But parser output must retain every source detail needed for diagnostics and semantics.
+Version 1 of the language does not need a full concrete syntax tree unless formatting/editor features require one. But parser output must retain every source detail needed for diagnostics and semantics.
 
 Tree invariants:
 
@@ -524,7 +518,7 @@ Binder responsibilities:
 Binder non-responsibilities:
 
 - target serialization,
-- Fork validation,
+- engine validation,
 - output format decisions,
 - runtime execution.
 
@@ -532,7 +526,7 @@ Duplicate diagnostics should include both the duplicate span and the prior decla
 
 ## 13. Type And Semantic Validation
 
-Validation checks whether a bound program is legal AI-BASIC and whether it can be represented by the selected target.
+Validation checks whether a bound program is a legal source program and whether it can be represented by the selected target.
 
 Validator responsibilities:
 
@@ -544,7 +538,7 @@ Validator responsibilities:
 - valid artifact references,
 - AI primitive constraints,
 - output format representability,
-- Flow v1 representability,
+- workflow-target representability,
 - warnings for unreachable or suspicious code where useful.
 
 Type inference:
@@ -557,7 +551,7 @@ A program can lex, parse, and bind successfully while still failing validation. 
 
 ## 14. Lowering
 
-Lowering translates validated AI-BASIC meaning into an IR. This is where AI-BASIC semantics meet target semantics.
+Lowering translates validated source meaning into an IR. This is where source semantics meet target semantics.
 
 Lowering rules:
 
@@ -570,58 +564,58 @@ Lowering rules:
 - no source reparsing,
 - source mappings preserved,
 - unsupported target constructs rejected with diagnostics,
-- no undocumented Fork behavior.
+- no undocumented engine behavior.
 
 Expected lowering targets:
 
 - `DocumentIr` for structured data,
-- `FlowIr` for Fork recipes,
+- `WorkflowIr` for engine recipes,
 - future executable/runtime IR.
 
-When targeting Fork, lowering is graph construction. The lowerer must create explicit states, edges, terminal nodes, failure routes, artifact references, and adapter invocations.
+When targeting the engine, lowering is graph construction. The lowerer must create explicit states, edges, terminal nodes, failure routes, artifact references, and adapter invocations.
 
-Lowerer responsibilities for Flow:
+Lowerer responsibilities for workflow targets:
 
 - compute artifact declarations,
 - complete the artifact closure pass,
-- build Flow state-machine steps from AI-BASIC control flow,
-- generate stable Flow identifiers,
+- build workflow state-machine steps from source control flow,
+- generate stable workflow identifiers,
 - create `next` maps from control flow and adapter outcomes,
 - derive `maxVisits` from bounded runtime loops where applicable,
 - emit checkpoints only where language semantics or target workflow require resumability,
 - enforce deterministic routing before AI judgment,
 - preserve source origin on every generated step,
-- reject constructs not representable in current Flow v1.
+- reject constructs not representable in the current workflow schema version.
 
-## 15. Flow IR
+## 15. Workflow IR
 
-Flow IR should model the target contract explicitly.
+Workflow IR should model the target contract explicitly.
 
 Representative shape:
 
 ```fsharp
-type FlowId = private FlowId of string
+type WorkflowId = private WorkflowId of string
 
-type FlowRecipe =
-    { Schema: FlowSchema
-      Id: FlowId
+type WorkflowRecipe =
+    { Schema: WorkflowSchema
+      Id: WorkflowId
       Description: string option
       Action: ActionMeta option
       Inputs: InputDecl list
       Roles: RoleDecl list
       Workspace: WorkspaceDecl
       Artifacts: ArtifactDecl list
-      Steps: FlowStep list
-      Defaults: FlowDefaults option
-      Policies: FlowPolicies option
+      Steps: WorkflowStep list
+      Defaults: WorkflowDefaults option
+      Policies: WorkflowPolicies option
       TestExpect: TestExpect option
       SourceMap: SourceMap }
 
-type FlowStep =
-    { Id: FlowId
+type WorkflowStep =
+    { Id: WorkflowId
       Uses: AdapterId
       With: AdapterInput
-      Next: FlowRoute option
+      Next: WorkflowRoute option
       MaxVisits: int option
       Retry: RetryPolicy option
       Span: SourceSpan option }
@@ -636,7 +630,7 @@ type IrValue =
     | IrMap of Map<string, IrValue>
 ```
 
-Flow IR rules:
+Workflow IR rules:
 
 - IDs are constructed through validation, not arbitrary strings.
 - Adapter IDs come from a typed catalog or protocol snapshot.
@@ -648,17 +642,17 @@ Flow IR rules:
 - Role binding should prefer logical roles over hardcoded provider/platform names.
 - Artifact closure declares every generated or consumed artifact.
 
-## 16. Fork Contract Snapshot
+## 16. Target Contract Snapshot
 
-This snapshot is for orientation only. Verify against valid Fork sources before implementation.
+This snapshot is illustrative: it shows the kind of contract a downstream orchestration engine defines, using placeholder names. Verify against the engine's authoritative sources before implementation.
 
 Schema:
 
 ```text
-engineerforge.flow/v1
+<engine>.workflow/v1
 ```
 
-Flow identifier regex:
+Workflow identifier regex:
 
 ```text
 ^[a-z0-9][a-z0-9-]*[a-z0-9]$|^[a-z0-9]$
@@ -694,7 +688,7 @@ Known leases:
 - `shared-read`
 - `exclusive-write`
 
-Known first-party adapters at the time of prior review:
+Example first-party adapters (illustrative):
 
 - `ai.run`
 - `core.writeText`
@@ -707,23 +701,23 @@ Known first-party adapters at the time of prior review:
 - `judge.run`
 - `action.run`
 - `operator.approval`
-- `flow.decision`
-- `flow.complete`
-- `flow.fail`
+- `workflow.decision`
+- `workflow.complete`
+- `workflow.fail`
 
 Important rules:
 
 - Unknown top-level fields are rejected.
 - Unknown step fields are rejected.
 - The first step in `steps` is the graph start.
-- Terminal adapters such as `flow.complete` and `flow.fail` must not declare `next`.
+- Terminal adapters such as `workflow.complete` and `workflow.fail` must not declare `next`.
 - Non-terminal steps must declare `next`.
 - `retry` is valid only for `ai.run`.
 - Artifact references must be declared.
 - Unbounded cycles are rejected unless a cycle step declares `maxVisits`.
 - Routing tries result-specific keys, then outcome keys, then default routing.
 
-Do not hard-code this forever. Implementation should use a generated protocol snapshot or typed adapter manifest derived from Fork.
+Do not hard-code this forever. Implementation should use a generated protocol snapshot or typed adapter manifest derived from the engine.
 
 ## 17. Protocol Snapshot Discipline
 
@@ -732,16 +726,16 @@ Compiler-side conformance checks are useful but not authoritative.
 Policy:
 
 - Keep a versioned protocol snapshot for fast local validation.
-- Generate it from valid Fork sources, not examples.
+- Generate it from valid engine sources, not examples.
 - Treat it as early feedback.
-- Run Fork's real validator as the final oracle for Flow output.
-- When Fork changes, regenerate the snapshot and update tests.
+- Run the engine's real validator as the final oracle for workflow output.
+- When the engine changes, regenerate the snapshot and update tests.
 
-A compiler-side mirror of the Fork validator must never become a competing definition of the contract.
+A compiler-side mirror of the engine's validator must never become a competing definition of the contract.
 
 ## 18. Schema Conformance
 
-Before emission, Flow IR must pass a conformance pass.
+Before emission, workflow IR must pass a conformance pass.
 
 The conformance pass checks:
 
@@ -757,7 +751,7 @@ The conformance pass checks:
 - retry legality,
 - adapter input shape where available,
 - role references,
-- no unsupported Flow fields.
+- no unsupported workflow fields.
 
 Schema conformance belongs between lowering and emission. It is not a parser responsibility and not an emitter responsibility.
 
@@ -772,7 +766,7 @@ Emitter rules:
 - preserve deterministic ordering,
 - do not bind variables,
 - do not type-check,
-- do not call Fork for semantic decisions,
+- do not call the engine for semantic decisions,
 - do not repair invalid IR,
 - do not concatenate complex structured output by hand.
 
@@ -782,7 +776,7 @@ Output-specific rules:
 - YAML must avoid ambiguous scalar surprises where possible.
 - XML mapping must explicitly define element/attribute behavior.
 - TOML mapping must respect table and array limitations.
-- Flow JSON must validate with Fork.
+- Workflow JSON must validate with the engine.
 
 ## 20. Structured Output Governance
 
@@ -831,33 +825,33 @@ Each primitive needs:
 
 The compiler must reject a primitive when the selected target cannot represent it truthfully.
 
-## 22. Flow Authoring Rules For AI-BASIC
+## 22. Workflow Authoring Rules
 
-When AI-BASIC targets Fork:
+When the language targets the orchestration engine:
 
-- emit only fields accepted by the current Flow protocol,
+- emit only fields accepted by the current workflow protocol,
 - prefer logical roles over hardcoded platform/model names,
 - bind roles in the recipe's `roles` object,
 - declare every artifact up front,
 - trim AI step `reads` to what each step actually needs,
-- use canonical substitution tokens supported by Fork,
+- use canonical substitution tokens supported by the engine,
 - use deterministic routing before AI judgment,
-- use `core.evaluatePlanStatus` for machine-readable plan-state decisions,
+- use a deterministic plan-status adapter (such as `core.evaluatePlanStatus`) for machine-readable plan-state decisions,
 - route `approve`, `revise`, `unknown`, and `default` deliberately when using plan-status evaluation,
-- use `judge.run` only where deterministic checks cannot answer,
-- use `core.writeProgressCheckpoint` only after durable semantic progress or where language semantics/target workflow require resumability,
+- use an AI judge adapter (such as `judge.run`) only where deterministic checks cannot answer,
+- write progress checkpoints only after durable semantic progress or where language semantics/target workflow require resumability,
 - use `exclusive-write` for writing project workspaces when that lease is valid,
-- put `retry` only on `ai.run`,
-- ensure every fallible path can reach `flow.fail`,
+- put `retry` only on adapters that permit it,
+- ensure every fallible path can reach the failure terminal,
 - do not make an AI judge restate a machine-readable decision already present in an artifact,
-- treat plan-file deletion as the completion signal for tag-team style loops where Fork rules require it,
+- treat plan-file deletion as the completion signal for tag-team-style loops where the engine's rules require it,
 - keep generated recipes readable by operators.
 
-Do not assume every AI-BASIC statement maps to a Fork step. Do not assume every Fork adapter should become source-language syntax.
+Do not assume every source statement maps to an engine step. Do not assume every engine adapter should become source-language syntax.
 
-## 23. BASIC-Specific Governance
+## 23. Historical-Dialect Governance
 
-BASIC-style syntax carries historical behavior. Implement only what the spec adopts, and test every compatibility claim.
+When the language adopts syntax from a historical dialect, that syntax carries historical behavior. Implement only what the spec adopts, and test every compatibility claim.
 
 Specify and test:
 
@@ -877,7 +871,7 @@ Specify and test:
 - `ON ... GOTO` and `ON ... GOSUB` if supported,
 - `DATA`/`READ` ordering if supported.
 
-Do not claim BASICA, GW-BASIC, QuickBASIC, or Visual Basic compatibility without explicit spec text and tests.
+Do not claim compatibility with any historical dialect without explicit spec text and tests.
 
 ## 24. Semantics Governance
 
@@ -920,7 +914,7 @@ Interpreter rules:
 - It uses the same parser/binder/validator pipeline.
 - It does not execute parser state.
 - It has operational-semantics tests.
-- Early interpreter work should avoid AI/git/Fork side effects until host boundaries are specified.
+- Early interpreter work should avoid AI/git/engine side effects until host boundaries are specified.
 
 Native binary rules:
 
@@ -937,14 +931,14 @@ Native binary rules:
 
 ## 26. Security And Host Boundary
 
-The compiler must not silently transform AI-BASIC into arbitrary host actions.
+The compiler must not silently transform source programs into arbitrary host actions.
 
 Rules:
 
 - File access must be explicit in the language and target runtime.
 - Shell access must be explicit and heavily constrained.
 - Secrets must never be embedded in structured output or native binaries.
-- Generated Flow must declare artifacts and workspace behavior through the Fork contract.
+- Generated workflow output must declare artifacts and workspace behavior through the engine contract.
 - Diagnostics must not leak secrets from source or environment.
 - Native execution needs a permission model before broad host interaction.
 
@@ -971,8 +965,8 @@ Syntax error
 Good:
 
 ```text
-AB1007: expected THEN after IF condition
-  at samples/demo.bas:12:18
+LC1007: expected THEN after IF condition
+  at samples/demo.src:12:18
   help: write IF condition THEN statement, or use multiline IF ... END IF
 ```
 
@@ -1020,9 +1014,9 @@ Lowering invariants:
 
 - IR contains no source-language-only constructs,
 - generated IDs are deterministic,
-- Flow artifacts are declared,
-- non-terminal Flow steps route,
-- fallible Flow paths can reach failure handling,
+- workflow artifacts are declared,
+- non-terminal workflow steps route,
+- fallible workflow paths can reach failure handling,
 - cycles are bounded.
 
 Emitter invariants:
@@ -1043,7 +1037,7 @@ Unit tests per phase:
 - Binder tests: symbol tables, labels, line numbers, duplicates.
 - Validator tests: types, loops, reserved names, target representability, diagnostics.
 - Lowering tests: IR shape and source origins.
-- Schema conformance tests: mirror Fork validation cases.
+- Schema conformance tests: mirror engine validation cases.
 - Emitter tests: deterministic output.
 - CLI tests: end-to-end compile paths.
 
@@ -1060,9 +1054,9 @@ High-value FsCheck properties:
 - emitter output is deterministic,
 - default omission is correct,
 - emitted JSON parses as JSON,
-- generated Flow IDs satisfy protocol regex,
-- every Flow artifact reference is declared,
-- every non-terminal Flow step routes,
+- generated workflow IDs satisfy the protocol regex,
+- every workflow artifact reference is declared,
+- every non-terminal workflow step routes,
 - diagnostic spans stay inside source length,
 - round-trip properties where the target supports them.
 
@@ -1071,27 +1065,27 @@ Golden tests:
 - Every important sample should eventually have expected output.
 - Compare parsed structures where formatting is not semantic.
 - Use byte-for-byte comparison only where deterministic formatting is required.
-- Flow goldens must pass Fork validation.
+- Workflow goldens must pass engine validation.
 - Golden updates must be intentional and reviewed.
 
-String diff alone is never enough for Flow correctness.
+String diff alone is never enough for workflow correctness.
 
-## 30. Fork Differential Testing
+## 30. Engine Differential Testing
 
-Fork is the oracle for Flow acceptance.
+The engine is the oracle for workflow acceptance.
 
 Pattern:
 
-1. Compile an AI-BASIC program to Flow JSON.
-2. Validate the Flow through the supported Fork validator or recipe entrypoint.
+1. Compile a source program to workflow JSON.
+2. Validate the workflow through the engine's supported validator or public entrypoint.
 3. Assert validation succeeds.
 4. When practical, execute in an isolated workspace.
 5. Compare expected artifacts, terminal status, and diagnostics.
 
-Expected command shape, subject to Fork CLI changes:
+Expected command shape, subject to engine CLI changes:
 
-```powershell
-C:\repos\Fork\src\entry\recipe.ps1 --action=lint --recipe-path=<compiled.json> --json
+```text
+<engine-cli> --action=lint --recipe-path=<compiled.json> --json
 ```
 
 If the public entrypoint changes, update governance and tests together.
@@ -1109,45 +1103,45 @@ Guidelines:
 - Use deterministic ordering without excessive sorting in inner loops.
 - Add benchmarks after the pipeline exists.
 
-Fast startup and Native AOT are valid goals for `basicai`, but the first milestone is correctness and a small working compiler.
+Fast startup and Native AOT are valid goals for the CLI, but the first milestone is correctness and a small working compiler.
 
 Expected publish commands:
 
 ```powershell
-dotnet publish src/Basicai.Cli -c Release -r win-x64 -p:PublishAot=true
-dotnet publish src/Basicai.Cli -c Release -r linux-x64 -p:PublishAot=true
-dotnet publish src/Basicai.Cli -c Release -r osx-arm64 -p:PublishAot=true
+dotnet publish src/<CliProject> -c Release -r win-x64 -p:PublishAot=true
+dotnet publish src/<CliProject> -c Release -r linux-x64 -p:PublishAot=true
+dotnet publish src/<CliProject> -c Release -r osx-arm64 -p:PublishAot=true
 ```
 
 ## 32. Milestones
 
 Milestone 1: minimal compiler:
 
-1. `basicai compile foo.bas --target json`.
+1. `<cli> compile <program> --target json`.
 2. Source file loading.
 3. Lexer with spans.
 4. Parser for a small spec-backed subset.
 5. AST with source locations.
 6. Binder for labels and variables needed by that subset.
 7. Validator for that subset.
-8. Document IR or Flow IR lowering.
+8. Document IR or workflow IR lowering.
 9. Deterministic JSON emission.
 10. Tests for every phase.
-11. One real sample, such as `samples/tag-team-run-plan.bas`, compiles and passes Fork validation when targeting Flow.
+11. One real sample program compiles and passes engine validation when targeting the workflow backend.
 
 Milestone 2: small interpreter:
 
-1. Non-orchestration BASIC subset: `LET`, `PRINT`, expressions, `IF`, `GOTO`, `GOSUB`, `RETURN`, `FOR`, `END`.
+1. Non-orchestration core-language subset: `LET`, `PRINT`, expressions, `IF`, `GOTO`, `GOSUB`, `RETURN`, `FOR`, `END`.
 2. Same parser/AST/binder/validator pipeline.
 3. Operational-semantics step tests.
-4. No AI/git/Fork side effects yet.
+4. No AI/git/engine side effects yet.
 
-Milestone 3: richer Flow compiler:
+Milestone 3: richer workflow compiler:
 
-1. More AI-BASIC primitives.
+1. More AI primitives.
 2. Checkpoint/slice lowering only where specified.
 3. Plan-status deterministic/fallback pattern.
-4. Golden tests and Fork differential validation.
+4. Golden tests and engine differential validation.
 5. Artifact closure and role binding.
 6. Schema snapshot generation.
 
@@ -1173,27 +1167,27 @@ dotnet build
 dotnet test
 dotnet fantomas src tests --check
 dotnet fantomas src tests
-dotnet run --project src/Basicai.Cli -- compile samples/tag-team-run-plan.bas --target json
+dotnet run --project src/<CliProject> -- compile samples/demo.src --target json
 ```
 
-Protocol snapshot command, if still supported by Fork:
+Protocol snapshot command, if the engine supports one:
 
-```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File C:\repos\Fork\tools\dump-flow-v1-protocol.ps1 -Json > resources/protocol-snapshot.json
+```text
+<engine-repo>/tools/<dump-protocol-script> -Json > resources/protocol-snapshot.json
 ```
 
-Fork validation command shape:
+Engine validation command shape:
 
-```powershell
-C:\repos\Fork\src\entry\recipe.ps1 --action=lint --recipe-path=<compiled.json> --json
+```text
+<engine-cli> --action=lint --recipe-path=<compiled.json> --json
 ```
 
 Native AOT publish:
 
 ```powershell
-dotnet publish src/Basicai.Cli -c Release -r win-x64 -p:PublishAot=true
-dotnet publish src/Basicai.Cli -c Release -r linux-x64 -p:PublishAot=true
-dotnet publish src/Basicai.Cli -c Release -r osx-arm64 -p:PublishAot=true
+dotnet publish src/<CliProject> -c Release -r win-x64 -p:PublishAot=true
+dotnet publish src/<CliProject> -c Release -r linux-x64 -p:PublishAot=true
+dotnet publish src/<CliProject> -c Release -r osx-arm64 -p:PublishAot=true
 ```
 
 ## 34. Review Checklist
@@ -1201,7 +1195,7 @@ dotnet publish src/Basicai.Cli -c Release -r osx-arm64 -p:PublishAot=true
 Before accepting a language implementation change:
 
 - Which phase changed, and did phase boundaries remain intact?
-- Is the feature described in `specs/AI-BASIC.md`?
+- Is the feature described in `specs/<language-spec>.md`?
 - If the spec changed, was the RFC process followed?
 - Did new AST/IR nodes get source locations?
 - Are source spans preserved?
@@ -1212,7 +1206,7 @@ Before accepting a language implementation change:
 - Did every parser rule get positive and negative tests?
 - Did semantic rules get validator tests?
 - Are property tests added where appropriate?
-- Does Flow output pass Fork validation?
+- Does workflow output pass engine validation?
 - Are all artifacts declared?
 - Are all failure routes reachable or intentionally impossible?
 - Are AST/IR matches exhaustive?
@@ -1227,10 +1221,10 @@ Reject these in review:
 
 | Anti-pattern | Why bad | Correct approach |
 |---|---|---|
-| Citing `SF_RECIPE_PROTOCOL.md` | revoked and stale | use Fork source plus `RECIPE_PROTOCOL.md` |
-| Citing `COMPILER_BUILD_PLAN.md` | deleted/stale planning source | use current valid docs and code |
+| Citing a revoked protocol document | revoked and stale | use engine source plus the generated protocol document |
+| Citing a deleted planning document | deleted/stale planning source | use current valid docs and code |
 | Parser emits JSON | phase violation | parser emits AST |
-| Parser knows Fork adapters | phase violation | lowerer/schema pass know Flow |
+| Parser knows engine adapters | phase violation | lowerer/schema pass know the workflow schema |
 | Validator reads tokens | phase violation | validator reads bound AST |
 | Emitter parses source | phase violation | emitter serializes verified IR |
 | AST stores raw token stream | leaks parser internals | store domain values and spans |
@@ -1239,14 +1233,14 @@ Reject these in review:
 | `Option.get` or `List.head` | crashes on bad input | pattern match |
 | One giant `compile` function | untestable | compose phases |
 | Mutating AST for type info | breaks phase separation | produce bound/validated trees |
-| Reimplementing Fork validator as final authority | drifts | local conformance plus Fork oracle |
-| Unsupported Flow fields | runtime rejection | lower to supported IR or reject |
-| `retry` on non-`ai.run` | runtime rejection | enforce target rule |
-| `exclusive` lease | retired/invalid | use `exclusive-write` if valid |
+| Reimplementing the engine validator as final authority | drifts | local conformance plus engine oracle |
+| Unsupported workflow fields | runtime rejection | lower to supported IR or reject |
+| `retry` on adapters that forbid it | runtime rejection | enforce target rule |
+| Retired lease names | retired/invalid | use the currently valid lease |
 | AI judge before deterministic checks | expensive and fragile | deterministic routing first |
 | Format logic in lowerer | couples semantics to serialization | lower to IR, emit per target |
 | Golden-only correctness | misses semantic bugs | combine goldens with structural/property tests |
-| Exposing every Fork adapter as syntax | language bloat | expose spec-backed primitives only |
+| Exposing every engine adapter as syntax | language bloat | expose spec-backed primitives only |
 | Spec feature ignored because inconvenient | violates contract | implement or formally defer via RFC |
 | Feature in code not in spec | unspecified behavior | update spec first |
 
@@ -1257,51 +1251,51 @@ This section keeps rejected material visible because bad ideas are useful warnin
 ### 36.1 Rejected Ideas
 
 - **Persona claims as authority.** Rejected. A "professor" framing is useful only as an engineering standard; authority comes from sources, code, and contracts.
-- **Using `SF_RECIPE_PROTOCOL.md`.** Rejected because the user explicitly revoked it and the corrected source chain replaced it.
-- **Using `COMPILER_BUILD_PLAN.md`.** Rejected because the user said it was deleted/false and it is not valid authority.
-- **Parser-to-Flow direct generation.** Rejected because it collapses syntax and target semantics.
+- **Using revoked protocol documents.** Rejected because they were explicitly revoked and the corrected source chain replaced them.
+- **Using deleted planning documents.** Rejected because deleted or falsified planning material is not valid authority.
+- **Parser-to-workflow direct generation.** Rejected because it collapses syntax and target semantics.
 - **Emitter-side semantic repair.** Rejected because invalid source programs must fail before emission.
 - **Golden files as the only correctness oracle.** Rejected because byte comparison misses semantic invalidity and target-contract drift.
 - **Full Damas-Hindley-Milner Algorithm W as a default requirement.** Rejected as premature unless the spec requires polymorphic inference.
-- **Treating Flow checkpoints as automatic semantics of an AI-BASIC `SLICE`.** Rejected unless `specs/AI-BASIC.md` defines `SLICE` semantics.
-- **Exposing every Fork adapter as an AI-BASIC primitive.** Rejected because target mechanics should not automatically become source-language syntax.
-- **Making this document canonical above `AGENTS.md`, the spec, or Fork code.** Rejected because governance must remain subordinate to actual project contracts.
+- **Treating workflow checkpoints as automatic semantics of a source-level slice construct.** Rejected unless `specs/<language-spec>.md` defines that construct's semantics.
+- **Exposing every engine adapter as a language primitive.** Rejected because target mechanics should not automatically become source-language syntax.
+- **Making this document canonical above `AGENTS.md`, the spec, or engine code.** Rejected because governance must remain subordinate to actual project contracts.
 
 ### 36.2 Constrained Ideas
 
-- **"`RECIPE_PROTOCOL.md` is the single source of truth."** Constrained. It is the canonical generated protocol document, but Fork production code is final when code and docs disagree.
-- **"Flow v1 emitter is the backend."** Constrained. Flow is the first serious orchestration backend, but AI-BASIC also has structured output targets and future executable work. Keep IR families separate.
-- **"Compiler-side schema validator mirrors Fork."** Constrained. Local conformance checks are useful for fast feedback; Fork's validator remains the oracle.
+- **"The generated protocol document is the single source of truth."** Constrained. It is the canonical generated protocol document, but engine production code is final when code and docs disagree.
+- **"The workflow emitter is the backend."** Constrained. The workflow target is the first serious orchestration backend, but the language also has structured output targets and future executable work. Keep IR families separate.
+- **"Compiler-side schema validator mirrors the engine."** Constrained. Local conformance checks are useful for fast feedback; the engine's validator remains the oracle.
 - **"Every sample needs byte-for-byte golden JSON."** Constrained. Byte goldens are useful where deterministic formatting matters. Structural comparisons are better when formatting is not semantic.
-- **"Emit checkpoints after every major semantic boundary."** Constrained. Checkpoints are useful for resumability, but emit them only when justified by AI-BASIC semantics or target workflow.
+- **"Emit checkpoints after every major semantic boundary."** Constrained. Checkpoints are useful for resumability, but emit them only when justified by language semantics or target workflow.
 - **"No wildcard matches anywhere."** Constrained. Wildcards are forbidden in core AST/IR walkers where they hide missing cases. They can be acceptable in local, closed, non-domain matches when context makes them safe.
-- **"Protocol snapshot cannot drift."** Constrained. Generated docs reduce drift but are not magic. Regenerate and revalidate when Fork changes.
+- **"Protocol snapshot cannot drift."** Constrained. Generated docs reduce drift but are not magic. Regenerate and revalidate when the engine changes.
 - **"Performance target first."** Constrained. Performance and AOT matter, but first slices prioritize correctness, diagnostics, and architecture.
-- **"AI-BASIC lowerer should always use `core.evaluatePlanStatus` before `judge.run`."** Constrained. This is mandatory for plan-status patterns where the decision is machine-readable. It is not a universal replacement for judgment steps.
-- **"`exclusive-write` should always be used."** Constrained. Use it for writing project workspaces when the current protocol and workflow require it, not as a blind default.
+- **"The lowerer should always use deterministic plan-status evaluation before an AI judge."** Constrained. This is mandatory for plan-status patterns where the decision is machine-readable. It is not a universal replacement for judgment steps.
+- **"The strongest write lease should always be used."** Constrained. Use it for writing project workspaces when the current protocol and workflow require it, not as a blind default.
 
 ### 36.3 Deferred Ideas
 
-- **Production recipe decompile/recompile round-trip.** Deferred until a decompiler exists and Flow IR is stable.
-- **Native executable backend for AI-BASIC programs.** Deferred until semantics and IR contracts are stable.
+- **Production recipe decompile/recompile round-trip.** Deferred until a decompiler exists and the workflow IR is stable.
+- **Native executable backend for source programs.** Deferred until semantics and IR contracts are stable.
 - **Full concrete syntax tree for formatter/editor tooling.** Deferred unless tooling requires it.
 - **Advanced optimization passes.** Deferred until correctness and target conformance are established.
-- **Broad BASIC compatibility matrix.** Deferred until `specs/AI-BASIC.md` explicitly chooses which dialect behaviors matter.
-- **Full runtime adapter system for executable AI-BASIC programs.** Deferred until interpreter semantics and host security policy are written.
+- **Broad historical-dialect compatibility matrix.** Deferred until `specs/<language-spec>.md` explicitly chooses which dialect behaviors matter.
+- **Full runtime adapter system for executable source programs.** Deferred until interpreter semantics and host security policy are written.
 
 ## 37. Merge Rationale
 
-This document preserves the useful substance from both round-three drafts:
+This document consolidates multiple governance drafts into one standard:
 
-- `codex3` supplied the broader final structure, explicit rejected/constrained/deferred ledger, structured output governance, Flow IR discipline, protocol snapshot discipline, and detailed Fork snapshot.
-- `claude3` supplied the sharper authority hierarchy, professor-style mandate, core algorithm section, SICP/Cerny-Tratt/Cooper-Torczon research additions, artifact closure emphasis, deterministic-routing-first rule, milestone split for interpreter and executable work, and stronger review checklist.
-- Similar compiler pipeline, F# discipline, lexer/parser/binder/validator/lowering/emitter guidance was merged rather than duplicated.
-- Flow-specific guidance was retained but constrained so Fork mechanics do not leak directly into source-language semantics.
-- Aggressive or overbroad claims were preserved in the rejected/constrained section so future agents can see what not to do.
+- One draft supplied the broader final structure, the explicit rejected/constrained/deferred ledger, structured output governance, workflow IR discipline, protocol snapshot discipline, and the detailed target-contract snapshot.
+- Another draft supplied the sharper authority hierarchy, the professor-style mandate, the core algorithm section, additional research foundations, the artifact-closure emphasis, the deterministic-routing-first rule, the milestone split for interpreter and executable work, and the stronger review checklist.
+- Similar compiler pipeline, F# discipline, and lexer/parser/binder/validator/lowering/emitter guidance was merged rather than duplicated.
+- Workflow-specific guidance was retained but constrained so engine mechanics do not leak directly into source-language semantics.
+- Aggressive or overbroad claims were preserved in the rejected/constrained section so future readers can see what not to do.
 
 ## 38. Operating Principle
 
-Build AI-BASIC as a typed F# compiler from the first line: source to tokens, tokens to AST, AST to bound and validated semantics, semantics to IR, IR to deterministic artifacts, and Flow artifacts validated by Fork.
+Build the language as a typed F# compiler from the first line: source to tokens, tokens to AST, AST to bound and validated semantics, semantics to IR, IR to deterministic artifacts, and workflow artifacts validated by the downstream engine.
 
 A future compiler engineer should be able to open the codebase and immediately identify:
 
@@ -1313,7 +1307,7 @@ A future compiler engineer should be able to open the codebase and immediately i
 - emitters,
 - diagnostics,
 - schema conformance checks,
-- Fork differential tests,
+- engine differential tests,
 - and executable/interpreter boundaries.
 
-If those responsibilities are mixed together, the implementation is not merely messy; it is scientifically weaker. Trust the spec for the source language. Trust Fork production code for the target contract. Reject anything that cannot be represented truthfully.
+If those responsibilities are mixed together, the implementation is not merely messy; it is scientifically weaker. Trust the spec for the source language. Trust the engine's production code for the target contract. Reject anything that cannot be represented truthfully.

@@ -2,9 +2,9 @@
 
 ## Purpose
 
-You are the expert-population author for a bAsIc stack taxonomy.
+You are the expert-population author for a stack taxonomy.
 
-Your job is to populate an existing taxonomy with the expert documents needed to use that stack during `DESIGN`, `GENERATE`, `JUDGE`, `IS Done`, and compiler-builder planning. `CreateNewTaxonomy.md` creates the layered professional map. This prompt gives each layer its working expert and then creates the stack-level expert that coordinates the whole stack.
+Your job is to populate an existing taxonomy with the expert documents needed to use that stack during design, generation, judgment, done-evaluation, and planning. `CreateNewTaxonomy.md` creates the layered professional map. This prompt gives each layer its working expert and then creates the stack-level expert that coordinates the whole stack.
 
 Use this prompt after a taxonomy exists under `catalogs/taxonomy/<stack-id>/`.
 
@@ -22,14 +22,14 @@ The caller should provide:
 
 ## Repository Boundary Rule
 
-This prompt may run from an AI-BASIC control repo while learning from a different target repo.
+This prompt may run from a control repo (the repo holding the installed catalog) while learning from a different target repo.
 
 - If no target repo is provided, crawl local expertise documents in the current repository and the selected taxonomy.
 - If the caller explicitly provides a target repo path, crawl that target repo for repo-local expertise even when it is outside the current working directory.
 - The control repo owns the installed taxonomy and expert catalog unless the caller explicitly names a different catalog destination.
 - The target repo supplies local expertise evidence, governance documents, domain documents, and project shape.
 - Expert files created by this prompt land in the control repo's `catalogs/taxonomy/<stack-id>/` by default.
-- Do not write into the target repo unless the caller explicitly asks for a project-local `.bAsIc/` install or update.
+- Do not write into the target repo unless the caller explicitly asks for a project-local `.design/` install or update.
 - In the output, state the control repo/catalog destination and the target repo or file bundle analyzed.
 
 ## Required Reads
@@ -68,7 +68,7 @@ Do not hard-code project-specific filenames. Crawl for Markdown files and identi
    node_modules/
    packages/
    vendor/
-   .bAsIc/current-output/
+   .design/current-output/
    ```
 
 3. Rank candidate expertise files by path, filename, headings, front matter, and body text. High-signal indicators include:
@@ -132,7 +132,7 @@ When internet sources are used, append them to `catalogs/taxonomy/<stack-id>/sou
 4. A layer expert may reference general experts as supporting skills.
 5. Do not duplicate an existing general expert just to make a layer feel complete.
 6. If an existing `Expert.md` already exists, update it carefully instead of replacing it blindly.
-7. Do not change the AI-BASIC language specification while populating experts. This is catalog work, not grammar work.
+7. Do not change the design system's specifications while populating experts. This is catalog work, not spec work.
 8. Do not create a layer expert that merely repeats the layer name. It must know what good work, bad work, evidence, and review look like for that layer.
 
 ## Layer Expert File Contract
@@ -141,7 +141,7 @@ Each layer expert should use this shape:
 
 ```markdown
 ---
-kind: ai-basic-expert
+kind: expert
 id: "<stack-id>-<layer-slug>-expert"
 name: "<Layer Name> Expert"
 family: "<stack-id>"
@@ -195,7 +195,7 @@ The stack-level expert should use this shape:
 
 ```markdown
 ---
-kind: ai-basic-stack-expert
+kind: stack-expert
 id: "<stack-id>-expert"
 name: "<Stack Name> Expert"
 family: "<stack-id>"
@@ -221,7 +221,7 @@ State how this expert coordinates the stack as a whole.
 
 ## Operating Doctrine
 
-Explain how this stack should be used during `DESIGN`, slicing, implementation, review, and acceptance.
+Explain how this stack should be used during the design step, slicing, implementation, review, and acceptance.
 
 ## Escalation Rules
 

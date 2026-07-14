@@ -1,6 +1,6 @@
 # MakeSlices — Turning a Wish and a Taxonomy into a Slicing Plan
 
-This prompt teaches an AI worker how to turn a wish plus an installed taxonomy stack into a slicing plan: horizontal taxonomy-layer slices, vertical walking-spine slices, and the ordering that makes them compose into a working system. `DESIGN` supplies it as guidance whenever it produces implementation slices.
+This prompt teaches an AI worker how to turn a wish plus an installed taxonomy stack into a slicing plan: horizontal taxonomy-layer slices, vertical walking-spine slices, and the ordering that makes them compose into a working system. The design step supplies it as guidance whenever it produces implementation slices.
 
 This is a method document, not project documentation. It is generic: it applies to compilers, applications, services, and AI-orchestration programs alike. The required metadata shape of each produced slice is owned by `governance/When-Design-Makes-Slices.md`; this prompt owns the thinking that fills that shape.
 
